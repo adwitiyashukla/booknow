@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: booknow
+      POSTGRES_PASSWORD: booknow
+      POSTGRES_DB: booknow
+    ports:
+      - '5432:5432'
+    volumes:
+      - booknow-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U booknow']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://booknow:booknow@db:5432/booknow?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:-local-dev-secret-change-me-please-32b}
+      AUTH_TRUST_HOST: 'true'
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports:
+      - '3000:3000'
+
+volumes:
+  booknow-data:

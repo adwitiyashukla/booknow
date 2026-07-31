@@ -1,0 +1,95 @@
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Design tokens. A single source of truth for colour, type, and elevation so
+   the whole product stays coherent without a component library.
+--------------------------------------------------------------------------- */
+@theme {
+  --color-ink-950: oklch(0.16 0.015 250);
+  --color-ink-900: oklch(0.21 0.018 250);
+  --color-ink-800: oklch(0.27 0.02 250);
+  --color-ink-700: oklch(0.36 0.02 250);
+  --color-ink-500: oklch(0.58 0.015 250);
+  --color-ink-300: oklch(0.78 0.012 250);
+  --color-ink-100: oklch(0.94 0.008 250);
+  --color-ink-50: oklch(0.975 0.005 250);
+
+  --color-brand-50: oklch(0.96 0.03 190);
+  --color-brand-200: oklch(0.87 0.07 190);
+  --color-brand-400: oklch(0.72 0.12 192);
+  --color-brand-500: oklch(0.64 0.13 194);
+  --color-brand-600: oklch(0.55 0.12 196);
+  --color-brand-700: oklch(0.45 0.1 198);
+
+  --color-sand-100: oklch(0.95 0.02 75);
+  --color-sand-300: oklch(0.87 0.05 72);
+  --color-sand-500: oklch(0.74 0.09 68);
+
+  --font-display: 'Georgia', 'Times New Roman', serif;
+  --radius-card: 1rem;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, oklch(0.28 0.05 200 / 0.55), transparent 60%),
+    radial-gradient(900px 500px at 90% 0%, oklch(0.3 0.06 60 / 0.3), transparent 55%),
+    var(--color-ink-950);
+  color: var(--color-ink-100);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+::selection {
+  background: var(--color-brand-500);
+  color: var(--color-ink-950);
+}
+
+/* Visible focus for keyboard users, invisible for mouse users. */
+:focus-visible {
+  outline: 2px solid var(--color-brand-400);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@utility glass {
+  background: color-mix(in oklch, var(--color-ink-900) 72%, transparent);
+  backdrop-filter: blur(14px);
+  border: 1px solid color-mix(in oklch, var(--color-ink-700) 60%, transparent);
+}
+
+@utility hairline {
+  border-color: color-mix(in oklch, var(--color-ink-700) 55%, transparent);
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.animate-rise { animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+.skeleton {
+  background: linear-gradient(90deg, oklch(0.24 0.02 250) 25%, oklch(0.3 0.02 250) 37%, oklch(0.24 0.02 250) 63%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
