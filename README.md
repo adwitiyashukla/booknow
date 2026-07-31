@@ -117,32 +117,33 @@ tests against a fixture, so none of it needs the 40 MB file to be verified.
 
 ```mermaid
 flowchart TB
-    subgraph Client
-        UI["React 19 Server + Client Components"]
+    subgraph client [Client]
+        UI["React 19 server and client components"]
         CW["Concierge widget"]
     end
 
-    subgraph Edge
+    subgraph edge [Edge runtime]
         MW["middleware.ts<br/>JWT role check"]
     end
 
-    subgraph Server["Next.js server runtime"]
-        RSC["Server Components"]
-        API["Route handlers<br/>/api/*"]
+    subgraph server [Next.js server runtime]
+        RSC["Server components"]
+        API["Route handlers under /api"]
         BS["booking-service<br/>transactional core"]
         PR["pricing engine<br/>pure functions"]
         AV["availability algebra<br/>pure functions"]
-        AI["concierge planner<br/>NLU + retriever"]
-        PAY["payment provider<br/>Stripe | Simulated"]
+        CON["concierge planner<br/>NLU and retriever"]
+        PAY["payment provider<br/>Stripe or simulated"]
     end
 
-    subgraph External
+    subgraph external [External services]
         DB[("PostgreSQL<br/>via Prisma")]
         ST["Stripe"]
-        LLM["Anthropic API<br/>optional"]
+        LLM["Anthropic API, optional"]
     end
 
-    UI --> MW --> RSC
+    UI --> MW
+    MW --> RSC
     CW --> API
     UI --> API
     API --> BS
@@ -150,11 +151,11 @@ flowchart TB
     BS --> PR
     BS --> AV
     BS --> DB
-    API --> AI
-    AI --> DB
-    AI -.optional.-> LLM
+    API --> CON
+    CON --> DB
+    CON -.-> LLM
     API --> PAY
-    PAY -.->|checkout + webhook| ST
+    PAY -.-> ST
     PAY --> DB
 ```
 
