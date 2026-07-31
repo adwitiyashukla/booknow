@@ -11,7 +11,6 @@ import { quoteStay, type PriceQuote, type RateRuleInput } from '@/lib/pricing';
 import { db } from './db';
 import { NotFoundError } from './errors';
 
-const BLOCKING = ['HELD', 'CONFIRMED', 'CHECKED_IN'] as const;
 
 /**
  * The set of bookings that genuinely consume a room right now.
@@ -23,12 +22,12 @@ const BLOCKING = ['HELD', 'CONFIRMED', 'CHECKED_IN'] as const;
  * depends on. That matters: schedulers are late, miss runs, and on some hosting
  * plans cannot run more than once a day.
  */
-export function blockingWhere(now = new Date()) {
+export function blockingWhere(now = new Date()): Prisma.BookingWhereInput {
   return {
     OR: [
-      { status: { in: ['CONFIRMED', 'CHECKED_IN'] as const } },
-      { status: 'HELD' as const, holdExpiresAt: { gt: now } },
-      { status: 'HELD' as const, holdExpiresAt: null },
+      { status: { in: ['CONFIRMED', 'CHECKED_IN'] } },
+      { status: 'HELD', holdExpiresAt: { gt: now } },
+      { status: 'HELD', holdExpiresAt: null },
     ],
   };
 }
