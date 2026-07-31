@@ -6,6 +6,12 @@ Live inventory across physical room units, demand-based pricing, Stripe payments
 concierge grounded in the database, and a revenue-management dashboard driven by **40,000 real
 hotel reservations**. Built with Next.js 15, TypeScript, PostgreSQL, and Prisma.
 
+### ▶ [Try it live: booknow-gold.vercel.app](https://booknow-gold.vercel.app)
+
+Sign in as `admin@booknow.dev` / `Password123` to see the operations dashboard, or
+`guest@booknow.dev` / `Password123` for the guest view. Payments run in simulated mode, so you
+can complete a booking end to end without entering a card.
+
 | | |
 | --- | --- |
 | ![Availability search with live pricing](docs/screenshots/02-search.png) | ![AI concierge answering a natural-language request](docs/screenshots/03-concierge.png) |
