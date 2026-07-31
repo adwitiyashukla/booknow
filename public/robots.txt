@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Operational surfaces have nothing useful for a crawler and sit behind auth.
+Disallow: /admin
+Disallow: /account
+Disallow: /api/
+Disallow: /checkout/
+Disallow: /bookings/

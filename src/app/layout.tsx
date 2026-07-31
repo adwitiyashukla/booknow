@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   },
   description:
     'A production-grade resort reservation platform: real-time availability, demand-based pricing, an AI concierge, and a revenue-management dashboard.',
+  icons: { icon: '/favicon.svg' },
   openGraph: {
     title: 'BookNow | Cove & Spruce reservations',
     description: 'Real-time availability, dynamic pricing, and an AI concierge.',
