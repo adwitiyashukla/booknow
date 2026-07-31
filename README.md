@@ -29,7 +29,7 @@ This project takes the problems seriously:
 | --- | --- |
 | Two guests race for the last room | Reservation is written in a `Serializable` transaction that re-reads inventory inside the transaction. Postgres `40001` is caught and returned as a clean `409`, not a `500`. |
 | Same-day turnover | Stays are half-open intervals `[checkIn, checkOut)`, so checkout-day and check-in-day never collide. |
-| Abandoned checkouts leak inventory | Bookings enter a `HELD` state with a 15-minute expiry, swept by a cron endpoint. |
+| Abandoned checkouts leak inventory | Bookings enter a `HELD` state with a 15-minute expiry. Expiry is evaluated **in the availability query**, so a lapsed hold frees the room immediately. The cron sweep only tidies the status column, it is not what correctness rests on. |
 | Floating-point money bugs | Every amount is an integer number of cents, end to end. A test asserts no quote field is ever fractional. |
 | Client-tampered prices | The server recomputes the authoritative price inside the booking transaction. The client quote is advisory only. |
 | Duplicate webhook deliveries | Settlement is idempotent, keyed on the Stripe event id. Replaying an event is a no-op. |
@@ -280,12 +280,12 @@ Clone and run: everything works.
 
 ## Testing
 
-137 unit tests across the five subsystems where correctness actually matters:
+143 unit tests across the five subsystems where correctness actually matters:
 
 | Suite | Covers |
 | --- | --- |
 | `tests/pricing.test.ts` | Multiplier monotonicity and bounds, seasonal priority resolution, weekend detection, integer-cents invariants, total reconciliation, refund policy |
-| `tests/availability.test.ts` | Half-open interval overlap, same-day turnover, worst-night binding constraint, unit assignment without collisions, DST safety |
+| `tests/availability.test.ts` | Half-open interval overlap, same-day turnover, worst-night binding constraint, unit assignment without collisions, DST safety, lapsed holds releasing inventory without a sweeper |
 | `tests/booking-state.test.ts` | Legal transitions, terminal-state immutability, reachability, acyclicity |
 | `tests/nlu.test.ts` | Party size, relative and absolute dates, budget parsing, feature synonyms, hard vs soft requirements, intent classification, hostile input |
 | `tests/retriever.test.ts` | Tokenising and stemming, cosine edge cases, ranking correctness, hard-filter behaviour, score bounds |
@@ -319,8 +319,10 @@ equals the amount paid"*, *"the same unit is never assigned twice for overlappin
 ## Deployment
 
 **Vercel** (recommended): connect the repo, add `DATABASE_URL` (Neon or Supabase both work on the
-free tier) and `AUTH_SECRET`, and deploy. Add a cron hitting `/api/cron/expire-holds` every five
-minutes.
+free tier) and `AUTH_SECRET`, and deploy. `vercel.json` registers a daily sweep of stale holds,
+which is all the Hobby plan allows. That is deliberately fine: expiry is evaluated inside the
+availability query, so inventory is correct between runs and the sweep is only housekeeping. On a
+paid plan, tighten the schedule to `*/5 * * * *`.
 
 **Docker**:
 

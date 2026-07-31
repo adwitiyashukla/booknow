@@ -16,6 +16,8 @@ export interface StayInterval {
 export interface BookedInterval extends StayInterval {
   roomUnitId?: string | null;
   status?: string;
+  /** When a HELD booking lapses. Null or absent means it does not expire. */
+  holdExpiresAt?: Date | string | null;
 }
 
 /** Statuses that consume inventory. HELD counts: that is the point of a hold. */
@@ -25,17 +27,32 @@ export function isBlocking(status: string | undefined): boolean {
   return !!status && (BLOCKING_STATUSES as readonly string[]).includes(status);
 }
 
+/**
+ * Whether a booking consumes a room at a given moment.
+ *
+ * A hold reserves inventory, but only until it lapses. Treating a lapsed hold
+ * as still blocking would leak rooms for as long as it took a scheduled job to
+ * notice, so expiry is evaluated here instead of being trusted to a cron.
+ */
+export function consumesInventory(booking: BookedInterval, now: Date = new Date()): boolean {
+  if (!isBlocking(booking.status)) return false;
+  if (booking.status !== 'HELD') return true;
+  if (booking.holdExpiresAt === null || booking.holdExpiresAt === undefined) return true;
+  return new Date(booking.holdExpiresAt).getTime() > now.getTime();
+}
+
 /** How many of a room type are consumed on each night of a candidate stay. */
 export function occupiedCountByNight(
   request: StayInterval,
   booked: BookedInterval[],
+  now: Date = new Date(),
 ): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const night of eachNight(request.checkIn, request.checkOut)) {
     counts[toDateKey(night)] = 0;
   }
   for (const b of booked) {
-    if (b.status && !isBlocking(b.status)) continue;
+    if (b.status && !consumesInventory(b, now)) continue;
     for (const night of eachNight(b.checkIn, b.checkOut)) {
       const key = toDateKey(night);
       if (key in counts) counts[key] = (counts[key] ?? 0) + 1;
@@ -52,8 +69,9 @@ export function remainingInventory(
   request: StayInterval,
   totalUnits: number,
   booked: BookedInterval[],
+  now: Date = new Date(),
 ): { available: number; soldOutNights: string[]; occupancyByDate: Record<string, number> } {
-  const counts = occupiedCountByNight(request, booked);
+  const counts = occupiedCountByNight(request, booked, now);
   const occupancyByDate: Record<string, number> = {};
   let worst = totalUnits;
   const soldOutNights: string[] = [];
@@ -88,7 +106,11 @@ export function selectFreeUnit(
 ): string | null {
   const busy = new Set(
     booked
-      .filter((b) => isBlocking(b.status) && rangesOverlap(request.checkIn, request.checkOut, b.checkIn, b.checkOut))
+      .filter(
+        (b) =>
+          consumesInventory(b) &&
+          rangesOverlap(request.checkIn, request.checkOut, b.checkIn, b.checkOut),
+      )
       .map((b) => b.roomUnitId)
       .filter((id): id is string => !!id),
   );

@@ -140,6 +140,13 @@ async function Dashboard() {
           <h3 className="mb-1 text-sm font-medium text-ink-100">Source markets</h3>
           <p className="mb-4 text-xs text-ink-500">Guest country of origin</p>
           <ShareList rows={metrics.topCountries} />
+          {metrics.topCountries.length ? (
+            <p className="mt-4 border-t hairline pt-3 text-xs leading-relaxed text-ink-500">
+              European skew is real, not a bug: the behavioural data is replayed from a published
+              Portuguese resort dataset (Antonio et al., 2019). Origins are the source hotel&apos;s
+              actual guest mix rather than invented figures.
+            </p>
+          ) : null}
         </Card>
 
         <Card className="p-6">

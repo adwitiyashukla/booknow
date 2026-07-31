@@ -14,6 +14,27 @@ import { NotFoundError } from './errors';
 const BLOCKING = ['HELD', 'CONFIRMED', 'CHECKED_IN'] as const;
 
 /**
+ * The set of bookings that genuinely consume a room right now.
+ *
+ * A HELD booking blocks inventory, but only until its hold expires. Deriving
+ * that at query time rather than waiting for the sweeper means an abandoned
+ * checkout stops blocking the room the moment it lapses, so the cron job is
+ * housekeeping (tidying the status column) rather than something correctness
+ * depends on. That matters: schedulers are late, miss runs, and on some hosting
+ * plans cannot run more than once a day.
+ */
+export function blockingWhere(now = new Date()) {
+  return {
+    OR: [
+      { status: { in: ['CONFIRMED', 'CHECKED_IN'] as const } },
+      { status: 'HELD' as const, holdExpiresAt: { gt: now } },
+      { status: 'HELD' as const, holdExpiresAt: null },
+    ],
+  };
+}
+
+
+/**
  * Load every booking that could touch a stay window. The half-open overlap
  * predicate is pushed down to Postgres so we never pull the whole table.
  */
@@ -24,7 +45,7 @@ export async function loadOverlappingBookings(
 ): Promise<(BookedInterval & { roomTypeId: string })[]> {
   const rows = await db.booking.findMany({
     where: {
-      status: { in: [...BLOCKING] },
+      ...blockingWhere(),
       checkIn: { lt: checkOut },
       checkOut: { gt: checkIn },
       ...(roomTypeIds?.length ? { roomTypeId: { in: roomTypeIds } } : {}),
@@ -197,7 +218,7 @@ export async function pickUnitForStay(
   const busy = await tx.booking.findMany({
     where: {
       roomTypeId,
-      status: { in: [...BLOCKING] },
+      ...blockingWhere(),
       checkIn: { lt: checkOut },
       checkOut: { gt: checkIn },
     },

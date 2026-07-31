@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildAvailabilityCalendar,
+  consumesInventory,
   isRoomTypeAvailable,
   occupiedCountByNight,
   portfolioOccupancy,
@@ -77,6 +78,46 @@ describe('occupiedCountByNight', () => {
       [stay('2026-08-10', '2026-08-11', 'u1', 'HELD')],
     );
     expect(counts['2026-08-10']).toBe(1);
+  });
+});
+
+describe('consumesInventory: an expired hold must release the room', () => {
+  const now = new Date('2026-08-01T12:00:00.000Z');
+  const held = (holdExpiresAt: string | null) => ({
+    checkIn: '2026-08-10',
+    checkOut: '2026-08-12',
+    status: 'HELD',
+    holdExpiresAt,
+  });
+
+  it('counts a live hold', () => {
+    expect(consumesInventory(held('2026-08-01T12:15:00.000Z'), now)).toBe(true);
+  });
+
+  it('releases a lapsed hold without waiting for a sweeper', () => {
+    expect(consumesInventory(held('2026-08-01T11:45:00.000Z'), now)).toBe(false);
+  });
+
+  it('treats a hold with no expiry as blocking', () => {
+    expect(consumesInventory(held(null), now)).toBe(true);
+  });
+
+  it('ignores expiry on statuses where it is meaningless', () => {
+    const confirmed = { ...held('2020-01-01T00:00:00.000Z'), status: 'CONFIRMED' };
+    expect(consumesInventory(confirmed, now)).toBe(true);
+  });
+
+  it('still excludes cancelled bookings', () => {
+    const cancelled = { ...held(null), status: 'CANCELLED' };
+    expect(consumesInventory(cancelled, now)).toBe(false);
+  });
+
+  it('frees the room in an inventory count once the hold lapses', () => {
+    const request = { checkIn: '2026-08-10', checkOut: '2026-08-12' };
+    const live = remainingInventory(request, 1, [held('2026-08-01T12:15:00.000Z')], now);
+    const lapsed = remainingInventory(request, 1, [held('2026-08-01T11:45:00.000Z')], now);
+    expect(live.available).toBe(0);
+    expect(lapsed.available).toBe(1);
   });
 });
 

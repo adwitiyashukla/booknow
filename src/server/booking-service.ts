@@ -8,7 +8,7 @@ import type { CreateBookingInput } from '@/lib/validation';
 import { db } from './db';
 import { env } from './env';
 import { AppError, InventoryConflictError, NotFoundError } from './errors';
-import { pickUnitForStay, loadOverlappingBookings } from './inventory';
+import { pickUnitForStay, loadOverlappingBookings, blockingWhere } from './inventory';
 import { ALLOWED_TRANSITIONS, canTransition } from '@/lib/booking-state';
 
 export { ALLOWED_TRANSITIONS, canTransition };
@@ -116,7 +116,7 @@ export async function createBookingHold(
         const blocking = await tx.booking.findMany({
           where: {
             roomTypeId: roomType.id,
-            status: { in: ['HELD', 'CONFIRMED', 'CHECKED_IN'] },
+            ...blockingWhere(),
             checkIn: { lt: checkOut },
             checkOut: { gt: checkIn },
           },

@@ -215,10 +215,13 @@ export function rankRooms(
       for (const f of soft) {
         if (satisfiesFeature(f, room)) {
           matched += 1;
-          reasons.push(`Matches "${f.replace(/_/g, ' ')}"`);
+          reasons.push(`Good for ${f.replace(/_/g, ' ')}`);
         }
       }
-      for (const f of query.mustHave) reasons.push(`Required: ${f.replace(/_/g, ' ')}`);
+      // Phrased as something a person would say, since it is shown to guests.
+      for (const f of query.mustHave) {
+        reasons.push(`Has the ${f.replace(/_/g, ' ')} you asked for`);
+      }
 
       const featureScore = soft.length ? matched / soft.length : 0;
       if (query.maxNightlyCents) reasons.push('Within your nightly budget');
