@@ -25,9 +25,15 @@ Split the concierge into three stages with a schema between each.
    tier produced the plan. Any LLM failure, timeout, or malformed response silently falls back to
    tier one.
 
-2. **Retrieve.** Rank actual database rows with a TF-IDF index and cosine similarity, combined
-   with hard-requirement filtering, soft-preference boosting, budget fit, and a review-score
-   prior.
+2. **Retrieve.** Rank actual database rows with a TF-IDF index and cosine similarity, blended
+   with soft-preference boosting and a review-score prior. Hard requirements and any stated
+   price bound are applied as **filters**, not as weighted terms.
+
+   That last point was learned the hard way. Budget was originally one more weighted signal at
+   14% of the score, which let a strong feature match outvote it: asked for "a quiet ocean-view
+   room under $300", the concierge led with a $680 villa because it matched "quiet". A stated
+   budget is a constraint, not a preference. When the filter leaves nothing, the concierge says
+   so and offers the nearest alternatives rather than quietly ignoring the number.
 
 3. **Answer.** Template the reply from the retrieved rows.
 

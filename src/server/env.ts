@@ -11,7 +11,6 @@ const schema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().optional().default(''),
   ANTHROPIC_API_KEY: z.string().optional().default(''),
   AI_MODEL: z.string().optional().default('claude-sonnet-4-5'),
-  NEXT_PUBLIC_APP_URL: z.string().optional().default('http://localhost:3000'),
   BOOKING_HOLD_MINUTES: z.coerce.number().int().min(1).max(120).default(15),
 });
 

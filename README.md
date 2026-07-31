@@ -1,5 +1,9 @@
 # BookNow
 
+[![CI](https://github.com/adwitiyashukla/booknow/actions/workflows/ci.yml/badge.svg)](https://github.com/adwitiyashukla/booknow/actions/workflows/ci.yml)
+[![Live demo](https://img.shields.io/badge/demo-booknow--gold.vercel.app-14b8a6)](https://booknow-gold.vercel.app)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 **A resort reservation platform with a real availability engine.**
 
 Live inventory across physical room units, demand-based pricing, Stripe payments, an AI
@@ -20,6 +24,8 @@ can complete a booking end to end without entering a card.
 ![Revenue management dashboard](docs/screenshots/04-dashboard.png)
 
 *Occupancy, ADR and RevPAR computed from a ledger of 7,112 real reservations.*
+
+![Cove and Spruce homepage](docs/screenshots/01-home.png)
 
 ---
 
@@ -114,7 +120,7 @@ off that ledger rather than estimated.
   matched to each booking's real country of origin, so the distribution of source markets stays
   truthful even though the individuals are invented.
 
-The whole transformation lives in `src/lib/hotel-dataset.ts` as pure functions with 28 unit
+The whole transformation lives in `src/lib/hotel-dataset.ts` as pure functions with 33 unit
 tests against a fixture, so none of it needs the 40 MB file to be verified.
 
 ---
@@ -353,7 +359,7 @@ prisma/
   seed.ts              deterministic synthetic ledger
   import-hotel-data.ts real-dataset importer
 tests/                 vitest unit suites
-docs/                  architecture decision records
+docs/                  architecture decision records (4)
 ```
 
 The `src/lib` and `src/server` split is deliberate: `lib` is pure and testable, `server` is where
