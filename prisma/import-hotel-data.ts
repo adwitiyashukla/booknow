@@ -30,6 +30,7 @@ import {
   shiftBooking,
   type SourceBooking,
 } from '../src/lib/hotel-dataset';
+import { confirmationMessage, describeDatabaseTarget, requiresConfirmation } from '../src/lib/db-target';
 
 const db = new PrismaClient();
 
@@ -109,6 +110,14 @@ function statusFor(b: SourceBooking): BookingStatus {
 }
 
 async function main() {
+  // Announce the target before deleting anything. See src/lib/db-target.ts.
+  const target = describeDatabaseTarget(process.env.DATABASE_URL);
+  console.log(`Target database: ${target.label}${target.isLocal ? '' : '  [REMOTE]'}`);
+  if (requiresConfirmation(target)) {
+    console.error(confirmationMessage(target, 'db:import:real'));
+    process.exit(1);
+  }
+
   console.log(`\nSource: ${DATASET_CITATION}\n`);
   const csv = await ensureDataset();
 

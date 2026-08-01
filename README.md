@@ -285,6 +285,7 @@ Clone and run: everything works.
 | `npm run db:push` | Sync the schema without a migration |
 | `npm run db:migrate` | Create and apply a migration |
 | `npm run db:seed` | Reset and reseed the catalogue plus a synthetic ledger |
+| | *Both seed commands print the target database first, and refuse to run against a remote host unless `ALLOW_REMOTE_SEED=true`* |
 | `npm run db:import:real` | Swap the ledger for ~40k real reservations |
 | `npm run db:studio` | Prisma Studio |
 
@@ -292,7 +293,7 @@ Clone and run: everything works.
 
 ## Testing
 
-143 unit tests across the five subsystems where correctness actually matters:
+154 unit tests across the six subsystems where correctness actually matters:
 
 | Suite | Covers |
 | --- | --- |
@@ -301,6 +302,7 @@ Clone and run: everything works.
 | `tests/booking-state.test.ts` | Legal transitions, terminal-state immutability, reachability, acyclicity |
 | `tests/nlu.test.ts` | Party size, relative and absolute dates, budget parsing, feature synonyms, hard vs soft requirements, intent classification, hostile input |
 | `tests/retriever.test.ts` | Tokenising and stemming, cosine edge cases, ranking correctness, hard-filter behaviour, score bounds |
+| `tests/db-target.test.ts` | Parsing a Postgres URL without leaking the password, classifying local vs remote, failing safe on malformed input, and refusing a destructive run against a remote database unless opted into |
 | `tests/hotel-dataset.test.ts` | CSV quoting, malformed and complimentary rows, date shifting preserves every gap and stay length, capacity-weighted tiering, best-fit inventory replay with deterministic tie-breaking, rate rescaling |
 
 ```bash

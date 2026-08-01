@@ -8,6 +8,8 @@
 import { PrismaClient, type BookingStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
+import { confirmationMessage, describeDatabaseTarget, requiresConfirmation } from '../src/lib/db-target';
+
 const db = new PrismaClient();
 
 // ---------------------------------------------------------------------------
@@ -49,6 +51,8 @@ const AMENITIES = [
   { slug: 'breakfast', label: 'Breakfast included', icon: 'Croissant', category: 'dining' },
 ];
 
+// Photography: see docs/CREDITS.md. All images are Unsplash-licensed and served
+// from images.unsplash.com, the only remote host allowed by next.config.ts.
 const IMG = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1600&q=80`;
 
 const ROOM_TYPES = [
@@ -63,7 +67,7 @@ const ROOM_TYPES = [
     floorMin: 0, floorMax: 0, hasOceanView: false, hasBalcony: true, isAccessible: true,
     units: 8,
     amenities: ['wifi', 'air-con', 'espresso', 'minibar', 'pet-friendly', 'workspace'],
-    images: [IMG('1590490360182-c33d57733427'), IMG('1611892440504-42a792e24d32')],
+    images: [IMG('1636980015567-01c079ac7304'), IMG('1611892440504-42a792e24d32')],
     corpus: 'quiet secluded ground floor garden terrace step-free accessible affordable value calm tranquil pet friendly desk workspace',
   },
   {
@@ -77,7 +81,7 @@ const ROOM_TYPES = [
     floorMin: 2, floorMax: 4, hasOceanView: true, hasBalcony: true, isAccessible: false,
     units: 10,
     amenities: ['wifi', 'air-con', 'espresso', 'minibar', 'soaking-tub', 'breakfast'],
-    images: [IMG('1582719478250-c89cae4dc85b'), IMG('1566073771259-6a8506099945')],
+    images: [IMG('1776876648949-63ccabf63b10'), IMG('1566073771259-6a8506099945')],
     corpus: 'ocean view sea view corner balcony sunrise atlantic cliff romantic couples soaking tub breakfast included',
   },
   {
@@ -91,7 +95,7 @@ const ROOM_TYPES = [
     floorMin: 1, floorMax: 3, hasOceanView: true, hasBalcony: true, isAccessible: true,
     units: 6,
     amenities: ['wifi', 'air-con', 'kitchenette', 'minibar', 'breakfast', 'parking'],
-    images: [IMG('1560448204-e02f11c3d0e2'), IMG('1522708323590-d24dbb6b0267')],
+    images: [IMG('1631049035634-c04c637651b1'), IMG('1522708323590-d24dbb6b0267')],
     corpus: 'family kids children bunk two bedrooms kitchenette spacious large suite connecting accessible step-free ocean view',
   },
   {
@@ -105,7 +109,7 @@ const ROOM_TYPES = [
     floorMin: 1, floorMax: 2, hasOceanView: false, hasBalcony: false, isAccessible: false,
     units: 5,
     amenities: ['wifi', 'workspace', 'espresso', 'air-con', 'gym'],
-    images: [IMG('1631049307264-da0ec9d70304'), IMG('1616486338812-3dadae4b4ace')],
+    images: [IMG('1737305457553-d6427adfdc8f'), IMG('1616486338812-3dadae4b4ace')],
     corpus: 'workspace desk remote work office fibre wifi quiet loft studio business long stay solo digital nomad',
   },
   {
@@ -119,7 +123,7 @@ const ROOM_TYPES = [
     floorMin: 0, floorMax: 0, hasOceanView: true, hasBalcony: true, isAccessible: false,
     units: 4,
     amenities: ['plunge-pool', 'wifi', 'air-con', 'minibar', 'spa', 'soaking-tub', 'breakfast'],
-    images: [IMG('1571003123894-1f0594d2b5d9'), IMG('1520250497591-112f2f40a3f4')],
+    images: [IMG('1596178067639-5c6e68aea6dc'), IMG('1520250497591-112f2f40a3f4')],
     corpus: 'luxury premium private plunge pool villa secluded quiet romantic honeymoon ocean view spa splurge finest',
   },
   {
@@ -133,7 +137,7 @@ const ROOM_TYPES = [
     floorMin: 5, floorMax: 5, hasOceanView: true, hasBalcony: true, isAccessible: true,
     units: 2,
     amenities: ['wifi', 'air-con', 'kitchenette', 'minibar', 'spa', 'plunge-pool', 'breakfast', 'parking'],
-    images: [IMG('1618773928121-c32242e63f39'), IMG('1578683010236-d716f9a3f461')],
+    images: [IMG('1542928658-22251e208ac1'), IMG('1578683010236-d716f9a3f461')],
     corpus: 'penthouse luxury premium finest largest suite spacious panoramic ocean view terrace family group celebration',
   },
   {
@@ -147,7 +151,7 @@ const ROOM_TYPES = [
     floorMin: 0, floorMax: 1, hasOceanView: false, hasBalcony: false, isAccessible: false,
     units: 7,
     amenities: ['wifi', 'air-con', 'parking'],
-    images: [IMG('1505693416388-ac5ce068fe85'), IMG('1598928506311-c55ded91a20c')],
+    images: [IMG('1771775529138-a7a20ba7e032'), IMG('1598928506311-c55ded91a20c')],
     corpus: 'budget cheap affordable value twin beds friends solo simple jetty basic economical',
   },
 ];
@@ -172,6 +176,14 @@ const REVIEW_BODIES = [
 ];
 
 async function main() {
+  // Announce the target before deleting anything. See src/lib/db-target.ts.
+  const target = describeDatabaseTarget(process.env.DATABASE_URL);
+  console.log(`Target database: ${target.label}${target.isLocal ? '' : '  [REMOTE]'}`);
+  if (requiresConfirmation(target)) {
+    console.error(confirmationMessage(target, 'db:seed'));
+    process.exit(1);
+  }
+
   console.log('Resetting database...');
   await db.$transaction([
     db.bookingEvent.deleteMany(),
@@ -210,7 +222,7 @@ async function main() {
       longitude: -68.2039,
       timezone: 'America/New_York',
       currency: 'USD',
-      heroImage: IMG('1507525428034-b723cf961d3e'),
+      heroImage: IMG('1633366957209-a79999bba16a'),
       starRating: 4.8,
       amenities: {
         create: ['infinity-pool', 'spa', 'gym', 'restaurant', 'beach-club', 'wifi', 'parking', 'breakfast'].map(
