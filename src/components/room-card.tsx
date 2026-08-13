@@ -84,8 +84,14 @@ export function RoomCard({ room, query }: { room: RoomCardData; query?: string }
 
         <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-ink-500">
           <li className="flex items-center gap-1.5"><Maximize className="size-3.5" />{room.sizeSqm} sqm</li>
-          <li className="flex items-center gap-1.5"><BedDouble className="size-3.5" />{room.bedCount} x {room.bedType.toLowerCase()}</li>
-          <li className="flex items-center gap-1.5"><Users className="size-3.5" />{room.maxAdults} + {room.maxChildren}</li>
+          <li className="flex items-center gap-1.5">
+            <BedDouble className="size-3.5" />
+            {room.bedCount} {room.bedType.toLowerCase()} bed{room.bedCount > 1 ? 's' : ''}
+          </li>
+          <li className="flex items-center gap-1.5">
+            <Users className="size-3.5" />
+            Sleeps {room.maxAdults + room.maxChildren}
+          </li>
         </ul>
 
         {room.matchReasons?.length ? (

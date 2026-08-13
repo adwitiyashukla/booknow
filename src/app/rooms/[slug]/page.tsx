@@ -113,7 +113,8 @@ export default async function RoomPage({
                 <Maximize className="size-4 text-brand-400" /> {room.sizeSqm} sqm
               </li>
               <li className="flex items-center gap-2.5 text-sm text-ink-200">
-                <BedDouble className="size-4 text-brand-400" /> {room.bedCount} x {room.bedType.toLowerCase()}
+                <BedDouble className="size-4 text-brand-400" /> {room.bedCount}{' '}
+                {room.bedType.toLowerCase()} bed{room.bedCount > 1 ? 's' : ''}
               </li>
               <li className="flex items-center gap-2.5 text-sm text-ink-200">
                 <Users className="size-4 text-brand-400" /> {room.maxAdults} adults, {room.maxChildren} children
