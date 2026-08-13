@@ -7,11 +7,6 @@ import {
 
 import { formatMoney } from '@/lib/money';
 
-/**
- * Recharts types its formatter arguments as a broad union, so the adapters
- * below take `unknown` and narrow once. That keeps the charts strict-mode
- * clean without sprinkling casts through the JSX.
- */
 type FormatterResult = [string, string];
 
 const moneyFormatter =

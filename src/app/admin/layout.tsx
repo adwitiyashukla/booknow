@@ -14,8 +14,6 @@ const NAV = [
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  // Defence in depth: middleware already blocked non-staff at the edge, and
-  // this check stops any direct render path from leaking data.
   const user = await requireRole('ADMIN', 'STAFF');
 
   return (

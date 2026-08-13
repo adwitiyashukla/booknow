@@ -12,10 +12,7 @@ import {
 } from '@/lib/pricing';
 
 const BASE = 20_000; // $200.00
-// A Monday, so the first three nights are all weekday nights.
 const MONDAY = '2026-09-07';
-// Far enough ahead that the lead-time multiplier is neutral, so these tests
-// isolate one pricing factor at a time.
 const TODAY = new Date('2026-08-20T00:00:00.000Z');
 
 describe('demandMultiplier', () => {
@@ -104,7 +101,6 @@ describe('quoteStay', () => {
   });
 
   it('applies the weekend surcharge to Friday and Saturday nights only', () => {
-    // 2026-09-11 is a Friday. Nights: Fri, Sat, Sun.
     const q = quoteStay({
       baseRateCents: BASE, checkIn: '2026-09-11', checkOut: '2026-09-14',
       adults: 2, children: 0, maxAdults: 2, today: TODAY,

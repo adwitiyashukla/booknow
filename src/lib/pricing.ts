@@ -1,19 +1,3 @@
-/**
- * Dynamic pricing engine.
- *
- * This is deliberately a set of pure functions with no database or framework
- * dependencies: the entire yield-management model can be unit tested, replayed
- * against historical stays, and reasoned about in isolation.
- *
- * Nightly rate = base
- *              x seasonal multiplier   (date-scoped rate rules)
- *              x weekend multiplier    (Fri/Sat nights)
- *              x demand multiplier     (projected occupancy curve)
- *              x lead-time multiplier  (early bird / last minute)
- * then a length-of-stay discount and rate-plan adjustment are applied to the
- * subtotal, followed by extra-guest charges, fees, and taxes.
- */
-
 import { addDays, daysUntil, eachNight, isWeekendNight, nightsBetween, toDateKey } from './dates';
 import { RESORT_FEE_CENTS_PER_NIGHT, SERVICE_FEE_RATE, TAX_RATE, applyRate } from './money';
 
@@ -32,12 +16,9 @@ export interface PricingContext {
   adults: number;
   children: number;
   maxAdults: number;
-  /** Fraction of inventory already sold for each night, keyed by YYYY-MM-DD. */
   occupancyByDate?: Record<string, number>;
   rateRules?: RateRuleInput[];
-  /** Percentage adjustment from the selected rate plan, e.g. -15. */
   ratePlanAdjustmentPct?: number;
-  /** Injected for deterministic tests. */
   today?: Date;
 }
 
@@ -69,7 +50,6 @@ export interface PriceQuote {
 export const WEEKEND_MULTIPLIER = 1.25;
 export const EXTRA_ADULT_CENTS_PER_NIGHT = 4000;
 
-/** Yield curve: the fuller the house, the higher the marginal room price. */
 export function demandMultiplier(occupancy: number): number {
   const o = Math.min(1, Math.max(0, occupancy));
   if (o >= 0.95) return 1.6;
@@ -77,20 +57,18 @@ export function demandMultiplier(occupancy: number): number {
   if (o >= 0.7) return 1.22;
   if (o >= 0.5) return 1.08;
   if (o >= 0.3) return 1.0;
-  return 0.92; // stimulate demand in a soft window
+  return 0.92;
 }
 
-/** Early-bird and last-minute behaviour, both bounded. */
 export function leadTimeMultiplier(daysAhead: number): number {
   if (daysAhead < 0) return 1;
-  if (daysAhead <= 2) return 0.88; // distressed inventory
+  if (daysAhead <= 2) return 0.88;
   if (daysAhead <= 7) return 0.95;
-  if (daysAhead >= 120) return 0.9; // reward committed planners
+  if (daysAhead >= 120) return 0.9;
   if (daysAhead >= 45) return 0.96;
   return 1;
 }
 
-/** Longer stays get progressively cheaper, capped so it cannot go silly. */
 export function lengthOfStayDiscountPct(nights: number): number {
   if (nights >= 28) return 25;
   if (nights >= 14) return 18;
@@ -99,7 +77,6 @@ export function lengthOfStayDiscountPct(nights: number): number {
   return 0;
 }
 
-/** Highest-priority rate rule covering a given night wins. */
 export function resolveSeasonalMultiplier(
   date: Date,
   rules: RateRuleInput[] = [],
@@ -109,7 +86,9 @@ export function resolveSeasonalMultiplier(
     .filter((r) => toDateKey(r.startDate) <= key && key <= toDateKey(r.endDate))
     .sort((a, b) => b.priority - a.priority);
   const winner = matching[0];
-  return winner ? { multiplier: winner.multiplier, label: winner.label } : { multiplier: 1, label: null };
+  return winner
+    ? { multiplier: winner.multiplier, label: winner.label }
+    : { multiplier: 1, label: null };
 }
 
 export function quoteStay(ctx: PricingContext): PriceQuote {
@@ -137,7 +116,8 @@ export function quoteStay(ctx: PricingContext): PriceQuote {
       const dm = demandMultiplier(occupancy);
       if (dm !== 1) {
         factors.push({
-          label: dm > 1 ? `High demand (${Math.round(occupancy * 100)}% sold)` : 'Low demand window',
+          label:
+            dm > 1 ? `High demand (${Math.round(occupancy * 100)}% sold)` : 'Low demand window',
           multiplier: dm,
         });
       }
@@ -145,12 +125,13 @@ export function quoteStay(ctx: PricingContext): PriceQuote {
 
     const lead = leadTimeMultiplier(daysUntil(night, today));
     if (lead !== 1) {
-      factors.push({ label: lead < 1 ? 'Advance-purchase saving' : 'Peak lead time', multiplier: lead });
+      factors.push({
+        label: lead < 1 ? 'Advance-purchase saving' : 'Peak lead time',
+        multiplier: lead,
+      });
     }
 
-    const rateCents = Math.round(
-      factors.reduce((acc, f) => acc * f.multiplier, ctx.baseRateCents),
-    );
+    const rateCents = Math.round(factors.reduce((acc, f) => acc * f.multiplier, ctx.baseRateCents));
 
     return { date: key, rateCents, baseCents: ctx.baseRateCents, factors };
   });
@@ -195,10 +176,6 @@ export function quoteStay(ctx: PricingContext): PriceQuote {
   };
 }
 
-/**
- * Cancellation policy evaluation. Returns the refundable amount given how
- * close to arrival the cancellation happens.
- */
 export function refundForCancellation(params: {
   totalCents: number;
   checkIn: Date | string;
@@ -212,7 +189,11 @@ export function refundForCancellation(params: {
   }
   const hoursToArrival = (new Date(params.checkIn).getTime() - now.getTime()) / 3_600_000;
   if (hoursToArrival >= params.cancellationHours) {
-    return { refundCents: params.totalCents, penaltyCents: 0, reason: 'Cancelled within free window' };
+    return {
+      refundCents: params.totalCents,
+      penaltyCents: 0,
+      reason: 'Cancelled within free window',
+    };
   }
   if (hoursToArrival >= 0) {
     const penalty = Math.round(params.totalCents * 0.5);
@@ -225,7 +206,6 @@ export function refundForCancellation(params: {
   return { refundCents: 0, penaltyCents: params.totalCents, reason: 'No-show or past arrival' };
 }
 
-/** Convenience helper used by the search grid to show "from" pricing. */
 export function cheapestNightlyFrom(
   baseRateCents: number,
   checkIn?: Date | string,

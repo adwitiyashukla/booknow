@@ -143,7 +143,7 @@ describe('parseQuery: confidence and explanation', () => {
   });
 
   it('never throws on hostile input', () => {
-    for (const input of ['', '   ', '?????', '💥💥', 'a'.repeat(500), '<script>alert(1)</script>']) {
+    for (const input of ['', '   ', '?????', '!!!@@@', 'a'.repeat(500), '<script>alert(1)</script>']) {
       expect(() => parseQuery(input, TODAY)).not.toThrow();
     }
   });

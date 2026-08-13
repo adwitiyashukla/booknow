@@ -90,9 +90,6 @@ export function ConciergeWidget() {
   }
 
   return (
-    // Tall and wide enough that a typical answer plus its three suggestions
-    // fit without scrolling. The calc caps it against the viewport, allowing
-    // for the 1.25rem offset top and bottom, so it never runs off a short screen.
     <div className="fixed bottom-5 right-5 z-50 flex h-[min(44rem,calc(100dvh-7rem))] w-[min(27rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl glass shadow-2xl">
       <div className="flex items-center justify-between border-b hairline px-4 py-3">
         <div className="flex items-center gap-2">
@@ -119,7 +116,7 @@ export function ConciergeWidget() {
               {turn.understood ? (
                 <p className="mt-2 border-t hairline pt-2 text-[11px] text-ink-500">
                   Understood: {turn.understood}
-                  {turn.tier ? ` · ${turn.tier === 'llm' ? 'LLM planner' : 'rule-based planner'}` : ''}
+                  {turn.tier ? `, ${turn.tier === 'llm' ? 'LLM planner' : 'rule-based planner'}` : ''}
                 </p>
               ) : null}
 
@@ -144,7 +141,7 @@ export function ConciergeWidget() {
 
               {turn.searchUrl ? (
                 <Link href={turn.searchUrl} className="mt-2.5 inline-block text-xs font-medium text-brand-300 hover:underline">
-                  See all matching rooms →
+                  See all matching rooms
                 </Link>
               ) : null}
             </div>

@@ -13,9 +13,6 @@ import {
   type SourceBooking,
 } from '@/lib/hotel-dataset';
 
-// A fixture in the exact shape of the published dataset, including the awkward
-// rows a real file contains: a cancellation, a no-show, a zero-night booking,
-// a complimentary (zero rate) row, and a quoted field with a comma.
 const CSV = [
   'hotel,is_canceled,lead_time,arrival_date_year,arrival_date_month,arrival_date_day_of_month,stays_in_weekend_nights,stays_in_week_nights,adults,children,babies,meal,country,market_segment,distribution_channel,is_repeated_guest,reserved_room_type,adr,total_of_special_requests,reservation_status,reservation_status_date',
   'Resort Hotel,0,342,2015,July,1,0,3,2,0,0,BB,PRT,Direct,Direct,0,C,120.5,1,Check-Out,2015-07-04',
@@ -81,7 +78,6 @@ describe('normaliseRow', () => {
 describe('loadDataset', () => {
   it('filters to one property and drops unusable rows', () => {
     const resort = loadDataset(CSV, { hotel: 'Resort Hotel' });
-    // Six resort rows, minus the zero-night and the zero-rate ones.
     expect(resort).toHaveLength(4);
     expect(resort.every((b) => b.nights > 0 && b.adr > 0)).toBe(true);
   });
@@ -163,8 +159,6 @@ describe('mapRoomCodes', () => {
   });
 
   it('sends demand to the tier that has the rooms for it', () => {
-    // A big cheap category and a two-room suite: almost everything should land
-    // in the big one rather than being split evenly.
     const lopsided = [
       { id: 'big', capacity: 30 },
       { id: 'tiny', capacity: 2 },
@@ -217,8 +211,6 @@ describe('replayAgainstInventory', () => {
   });
 
   it('prefers the most recently vacated unit, closing the smallest gap', () => {
-    // u1 has been idle since 1 Aug, u2 only since 4 Aug. A stay arriving on the
-    // 5th should take u2 and leave u1 free for something longer.
     const { accepted } = replayAgainstInventory(
       [
         stay('2026-07-28', '2026-08-01'),
@@ -231,7 +223,6 @@ describe('replayAgainstInventory', () => {
   });
 
   it('packs at least as tightly as naive first-fit', () => {
-    // Interleaved arrivals of mixed length: best-fit should refuse fewer.
     const requests = Array.from({ length: 120 }, (_, i) => {
       const day = 1 + Math.floor(i / 2);
       const nights = i % 2 === 0 ? 2 : 5;

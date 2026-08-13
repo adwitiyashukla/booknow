@@ -1,17 +1,3 @@
-// ---------------------------------------------------------------------------
-// BookNow - data model
-//
-// Design notes
-//  * Inventory is modelled at two levels: a RoomType (the sellable product,
-//    e.g. "Ocean Suite") and RoomUnit (the physical rooms, e.g. 301, 302).
-//    Availability is therefore a counting problem, not a boolean - which is
-//    how real property-management systems work.
-//  * Bookings store an inclusive check-in / exclusive check-out instant so
-//    that the overlap predicate is a simple half-open interval test.
-//  * A partial unique index guarantees a room unit can never be double booked
-//    for overlapping dates even under concurrent writes (see migration).
-// ---------------------------------------------------------------------------
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -64,10 +50,6 @@ enum RoomUnitStatus {
   DEEP_CLEAN
 }
 
-// --------------------------------------------------------------------------
-// Identity
-// --------------------------------------------------------------------------
-
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -90,8 +72,6 @@ model User {
   @@index([role])
 }
 
-/// Auth.js adapter tables. Sessions are JWT-backed today; these exist so an
-/// OAuth provider (Google, GitHub) can be added without a migration.
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -126,10 +106,6 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
-
-// --------------------------------------------------------------------------
-// Property & inventory
-// --------------------------------------------------------------------------
 
 model Property {
   id          String  @id @default(cuid())
@@ -189,7 +165,6 @@ model RoomType {
   name          String
   shortPitch    String
   description   String
-  /// Base nightly rate in minor units (cents). Money is never a float.
   baseRateCents Int
   maxAdults     Int     @default(2)
   maxChildren   Int     @default(2)
@@ -202,7 +177,6 @@ model RoomType {
   hasBalcony    Boolean @default(false)
   isAccessible  Boolean @default(false)
   images        String[]
-  /// Free-text feature blob used by the concierge retriever for TF-IDF search.
   searchCorpus  String  @default("")
 
   property   Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
@@ -234,18 +208,12 @@ model RoomUnit {
   @@index([roomTypeId, status])
 }
 
-// --------------------------------------------------------------------------
-// Rates
-// --------------------------------------------------------------------------
-
 model RatePlan {
   id                String  @id @default(cuid())
   roomTypeId        String
   code              String
   name              String
   description       String
-  /// Percentage adjustment applied to the computed nightly rate, e.g. -15 for
-  /// a non-refundable advance-purchase plan.
   adjustmentPct     Float   @default(0)
   minNights         Int     @default(1)
   refundable        Boolean @default(true)
@@ -258,8 +226,6 @@ model RatePlan {
   @@unique([roomTypeId, code])
 }
 
-/// Date-scoped multipliers used by the dynamic pricing engine (high season,
-/// festival weeks, blackout dates, and so on).
 model RateRule {
   id         String   @id @default(cuid())
   roomTypeId String?
@@ -274,10 +240,6 @@ model RateRule {
   @@index([startDate, endDate])
 }
 
-// --------------------------------------------------------------------------
-// Bookings
-// --------------------------------------------------------------------------
-
 model Booking {
   id           String        @id @default(cuid())
   reference    String        @unique
@@ -291,29 +253,23 @@ model Booking {
   guestEmail String
   guestPhone String?
 
-  /// Inclusive check-in date (stored as a pure date, no timezone drift).
   checkIn  DateTime @db.Date
-  /// Exclusive check-out date. Nights = checkOut - checkIn.
   checkOut DateTime @db.Date
   nights   Int
   adults   Int      @default(2)
   children Int      @default(0)
 
-  /// Full immutable price breakdown captured at booking time.
   subtotalCents Int
   taxesCents    Int
   feesCents     Int
   discountCents Int @default(0)
   totalCents    Int
   currency      String @default("USD")
-  /// Per-night rates snapshot: [{ date, rateCents, reason }]
   priceBreakdown Json
 
   specialRequests String?
   holdExpiresAt   DateTime?
 
-  /// Acquisition attributes carried over from the real source dataset.
-  /// Null for bookings made live through the site.
   marketSegment       String?
   distributionChannel String?
   guestCountry        String?
@@ -342,8 +298,6 @@ model Booking {
   @@index([holdExpiresAt])
 }
 
-/// Append-only audit trail. Every status transition is recorded, which is what
-/// makes the booking lifecycle debuggable in production.
 model BookingEvent {
   id        String   @id @default(cuid())
   bookingId String
@@ -369,7 +323,6 @@ model Payment {
   refundedCents  Int             @default(0)
   currency       String          @default("USD")
   failureReason  String?
-  /// Guards against duplicate webhook deliveries.
   idempotencyKey String?         @unique
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -396,8 +349,6 @@ model Review {
   @@index([roomTypeId])
 }
 
-/// Persisted concierge conversations - lets the AI keep context across turns
-/// and gives us a corpus for evaluating the NLU layer.
 model ConciergeSession {
   id        String   @id @default(cuid())
   userId    String?

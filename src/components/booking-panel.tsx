@@ -57,8 +57,6 @@ export function BookingPanel({
   const [submitting, setSubmitting] = useState(false);
   const [showGuestFields, setShowGuestFields] = useState(false);
 
-  // Re-quote whenever the stay changes. Debounced so dragging a date input
-  // does not fire a request per keystroke.
   useEffect(() => {
     if (checkOut <= checkIn) return;
     const controller = new AbortController();
@@ -189,7 +187,7 @@ export function BookingPanel({
       {quote ? (
         <dl className="mt-5 space-y-2 border-t hairline pt-4 text-sm">
           <div className="flex justify-between text-ink-300">
-            <dt>{formatMoney(quote.averageNightlyCents)} × {quote.nights} nights</dt>
+            <dt>{formatMoney(quote.averageNightlyCents)} x {quote.nights} nights</dt>
             <dd>{formatMoney(quote.roomSubtotalCents)}</dd>
           </div>
           {quote.extraGuestCents > 0 ? (

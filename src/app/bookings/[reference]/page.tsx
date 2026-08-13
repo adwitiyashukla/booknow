@@ -91,7 +91,7 @@ export default async function BookingPage({
           </dl>
           {booking.payments.length ? (
             <p className="mt-3 text-xs text-ink-500">
-              Paid via {booking.payments[0]!.provider.toLowerCase()} · {booking.payments[0]!.status.toLowerCase()}
+              Paid via {booking.payments[0]!.provider.toLowerCase()}, {booking.payments[0]!.status.toLowerCase()}
             </p>
           ) : null}
         </Card>
@@ -120,10 +120,10 @@ export default async function BookingPage({
               <div>
                 <p className="text-ink-200">
                   {event.type.replace(/_/g, ' ').toLowerCase()}
-                  {event.fromState ? ` (${event.fromState} → ${event.toState})` : ''}
+                  {event.fromState ? ` (${event.fromState} to ${event.toState})` : ''}
                 </p>
                 <p className="text-xs text-ink-500">
-                  {event.createdAt.toISOString().replace('T', ' ').slice(0, 16)} · {event.actor}
+                  {event.createdAt.toISOString().replace('T', ' ').slice(0, 16)}, {event.actor}
                 </p>
               </div>
             </li>
@@ -132,7 +132,7 @@ export default async function BookingPage({
       </Card>
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-        <Link href="/rooms" className="text-sm text-ink-400 hover:text-ink-100">← Browse more rooms</Link>
+        <Link href="/rooms" className="text-sm text-ink-400 hover:text-ink-100">Browse more rooms</Link>
         {cancellable ? <CancelBookingButton reference={booking.reference} /> : null}
       </div>
     </div>

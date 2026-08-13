@@ -17,7 +17,6 @@ const stay = (checkIn: string, checkOut: string, roomUnitId?: string, status = '
 
 describe('rangesOverlap (half-open intervals)', () => {
   it('treats a same-day turnover as no overlap', () => {
-    // Guest A checks out on the 5th, guest B checks in on the 5th.
     expect(rangesOverlap('2026-08-01', '2026-08-05', '2026-08-05', '2026-08-08')).toBe(false);
   });
 
@@ -49,7 +48,6 @@ describe('nightsBetween / eachNight', () => {
   });
 
   it('is immune to daylight-saving boundaries', () => {
-    // A DST transition in many timezones; UTC normalisation must ignore it.
     expect(nightsBetween('2026-03-28', '2026-03-30')).toBe(2);
     expect(nightsBetween('2026-10-24', '2026-10-26')).toBe(2);
   });

@@ -8,10 +8,6 @@ interface Day {
   occupancy: number;
 }
 
-/**
- * A compact inventory heat strip. Colour encodes how full each night is, which
- * communicates scarcity far faster than a table of numbers.
- */
 export function AvailabilityStrip({ days, unitsTotal }: { days: Day[]; unitsTotal: number }) {
   const [hovered, setHovered] = useState<Day | null>(null);
 
@@ -40,7 +36,7 @@ export function AvailabilityStrip({ days, unitsTotal }: { days: Day[]; unitsTota
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-ink-500">
         <p className="min-h-4">
           {hovered
-            ? `${hovered.date} · ${hovered.remaining} of ${unitsTotal} free · ${Math.round(hovered.occupancy * 100)}% sold`
+            ? `${hovered.date}, ${hovered.remaining} of ${unitsTotal} free, ${Math.round(hovered.occupancy * 100)}% sold`
             : 'Hover a night to see remaining inventory.'}
         </p>
         <ul className="flex items-center gap-3">

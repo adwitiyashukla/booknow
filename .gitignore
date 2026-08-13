@@ -11,6 +11,4 @@ coverage
 Thumbs.db
 prisma/dev.db*
 .vercel
-
-# Cached copy of the public hotel dataset (downloaded by db:import:real)
 prisma/.data

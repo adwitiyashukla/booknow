@@ -1,13 +1,6 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /**
-   * Standalone output emits a self-contained server bundle, which is what
-   * keeps the Docker runtime image small. It is opt-in rather than always on,
-   * because `next start` cannot serve a standalone build, so leaving it
-   * enabled would break the ordinary local production run. The Dockerfile
-   * sets BUILD_STANDALONE=true; nothing else needs to.
-   */
   output: process.env.BUILD_STANDALONE === 'true' ? 'standalone' : undefined,
   reactStrictMode: true,
   poweredByHeader: false,

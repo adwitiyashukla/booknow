@@ -5,17 +5,6 @@ import { env, features } from './env';
 import { AppError, NotFoundError } from './errors';
 import { transitionBooking } from './booking-service';
 
-/**
- * Payment provider abstraction.
- *
- * The app ships with two implementations behind one interface:
- *   - StripeProvider: real Checkout Sessions, signed webhooks, real refunds.
- *   - SimulatedProvider: an in-process mock used when no Stripe key is set.
- *
- * That means a recruiter can clone the repo and complete a booking end to end
- * without creating a Stripe account, while the production path is genuine.
- */
-
 export interface CheckoutRequest {
   bookingId: string;
   reference: string;
@@ -69,7 +58,6 @@ const stripeProvider: PaymentProviderAdapter = {
         cancel_url: request.cancelUrl,
         expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
       },
-      // Stripe deduplicates retries of the same booking for us.
       { idempotencyKey: `checkout_${request.bookingId}` },
     );
 
@@ -89,8 +77,6 @@ const simulatedProvider: PaymentProviderAdapter = {
   name: 'SIMULATED',
   async createCheckout(request) {
     const providerRef = `sim_${request.bookingId}`;
-    // The mock checkout page lives inside the app and calls the same
-    // settlement code path the Stripe webhook uses.
     const url = `/checkout/simulate?ref=${encodeURIComponent(request.reference)}&amount=${request.amountCents}`;
     return { url, providerRef, provider: 'SIMULATED' };
   },
@@ -142,11 +128,6 @@ export async function startCheckout(reference: string, origin: string): Promise<
   return result;
 }
 
-/**
- * Single settlement path shared by the Stripe webhook and the simulated
- * provider. Idempotent: replaying the same event is a no-op, which matters
- * because Stripe retries deliveries.
- */
 export async function settlePayment(params: {
   reference: string;
   providerRef: string;
@@ -182,7 +163,6 @@ export async function settlePayment(params: {
     });
   }
 
-  // Loyalty accrual: 1 point per dollar of room revenue.
   if (booking.userId) {
     await db.user.update({
       where: { id: booking.userId },

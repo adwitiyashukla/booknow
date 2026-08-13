@@ -1,12 +1,3 @@
-/**
- * Fixed-window in-memory rate limiter.
- *
- * Deliberately simple and honest about its trade-off: it is per-instance, so
- * on a multi-region deploy it would be swapped for Redis/Upstash. It still
- * stops the obvious abuse of the AI and booking endpoints in a single-instance
- * deployment, and documents the intent.
- */
-
 interface Bucket {
   count: number;
   resetAt: number;
@@ -43,7 +34,6 @@ export function clientKey(request: Request, scope: string): string {
   return `${scope}:${ip}`;
 }
 
-/** Periodic sweep so the map cannot grow without bound. */
 if (typeof setInterval !== 'undefined') {
   setInterval(() => {
     const now = Date.now();

@@ -1,18 +1,3 @@
-/**
- * Replace the synthetic booking ledger with real reservations.
- *
- * Source: Antonio, Almeida & Nunes (2019), "Hotel booking demand datasets",
- * Data in Brief 22:41-49. 119,390 real reservations from two Portuguese
- * hotels. We take the resort property, since that is what this codebase
- * models.
- *
- * The room catalogue (property, room types, physical units, rate plans) is
- * this project's own and must already exist, so run `npm run db:seed` first.
- * This script then swaps the invented bookings for real ones.
- *
- *   npm run db:seed          # catalogue + synthetic bookings, no network
- *   npm run db:import:real   # catalogue + real bookings, needs one download
- */
 import { createWriteStream, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import path from 'node:path';
@@ -42,7 +27,6 @@ const today = new Date(
   Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()),
 );
 
-// Deterministic PRNG, so two runs of this importer produce identical output.
 function mulberry32(seed: number) {
   return function random() {
     seed |= 0;
@@ -72,12 +56,6 @@ async function ensureDataset(): Promise<string> {
   return readFileSync(CACHE_FILE, 'utf8');
 }
 
-/**
- * The source is anonymised, as it has to be, so guests need names. Country of
- * origin is real, so names are drawn from a pool matched to the region: the
- * distribution of source markets stays truthful even though the individuals
- * are invented.
- */
 const NAME_POOLS: Record<string, [string[], string[]]> = {
   PRT: [['Miguel', 'Ana', 'Joao', 'Beatriz', 'Rui', 'Ines'], ['Silva', 'Santos', 'Ferreira', 'Costa', 'Oliveira']],
   GBR: [['Oliver', 'Amelia', 'Harry', 'Isla', 'George', 'Freya'], ['Smith', 'Taylor', 'Walker', 'Hughes', 'Bennett']],
@@ -110,7 +88,6 @@ function statusFor(b: SourceBooking): BookingStatus {
 }
 
 async function main() {
-  // Announce the target before deleting anything. See src/lib/db-target.ts.
   const target = describeDatabaseTarget(process.env.DATABASE_URL);
   console.log(`Target database: ${target.label}${target.isLocal ? '' : '  [REMOTE]'}`);
   if (requiresConfirmation(target)) {
@@ -135,19 +112,15 @@ async function main() {
   const units = roomTypes.flatMap((rt) => rt.units.map((u) => ({ id: u.id, roomTypeId: rt.id })));
   console.log(`  ${roomTypes.length} room types, ${units.length} sellable units`);
 
-  // Shift the whole stream forward as one block so it straddles today.
   const shift = computeDateShift(all, today, 100);
   const shifted = all.map((b) => shiftBooking(b, shift));
   console.log(`  shifted arrivals forward by ${shift} days to straddle today`);
 
-  // Weight demand by how many rooms each tier actually has.
   const codeToRoomType = mapRoomCodes(
     shifted,
     roomTypes.map((rt) => ({ id: rt.id, capacity: rt.units.length })),
   );
 
-  // Only reservations the guest kept ever occupied a room, so only those
-  // compete for inventory.
   const kept = shifted
     .filter((b) => !b.cancelled && b.status !== 'Canceled')
     .map((b) => ({ ...b, roomTypeId: codeToRoomType[b.roomCode] ?? roomTypes[0]!.id }));
@@ -159,8 +132,6 @@ async function main() {
       `${turnedAway.toLocaleString()} turned away (${(acceptanceRate * 100).toFixed(1)}% fit)`,
   );
 
-  // Keep cancellations at the same rate relative to accepted business, so the
-  // cancellation metric stays faithful to the source.
   const cancellations = shifted
     .filter((b) => b.cancelled || b.status === 'Canceled')
     .filter(() => rand() < acceptanceRate)
@@ -249,7 +220,6 @@ async function main() {
     };
   });
 
-  // Batched so a large ledger does not exceed the parameter limit.
   const CHUNK = 2000;
   for (let i = 0; i < rows.length; i += CHUNK) {
     await db.booking.createMany({ data: rows.slice(i, i + CHUNK) });

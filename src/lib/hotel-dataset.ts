@@ -1,31 +1,5 @@
-/**
- * Adapter for the Hotel Booking Demand dataset.
- *
- *   Antonio, N., de Almeida, A., & Nunes, L. (2019).
- *   "Hotel booking demand datasets." Data in Brief, 22, 41-49.
- *   119,390 real reservations from two Portuguese hotels, arrivals
- *   July 2015 to August 2017. Openly licensed.
- *
- * What is real: lead time, length of stay, party composition, cancellation
- * and no-show behaviour, average daily rate, arrival seasonality, market
- * segment, distribution channel, and country of origin.
- *
- * What this module has to synthesise, because the source cannot provide it:
- *   * Physical room numbers. The dataset anonymises room types to letters and
- *     carries no unit inventory, so arrivals are replayed against this
- *     property's 42 units and anything that does not fit is dropped, exactly
- *     as a real property turns business away when it is full.
- *   * Guest identity. The dataset is anonymised, as it must be.
- *   * Calendar position. Arrivals are shifted forward as one rigid block, so
- *     every interval, gap, and seasonal peak is preserved relative to the
- *     others while the data lands around today.
- *
- * Everything here is pure so the transformation can be unit tested against a
- * fixture rather than a 40 MB download.
- */
-
 export const DATASET_CITATION =
-  'Antonio, Almeida & Nunes (2019), Hotel booking demand datasets, Data in Brief 22:41-49';
+  'Antonio, Almeida and Nunes (2019), Hotel booking demand datasets, Data in Brief 22:41-49';
 
 export const DATASET_URL =
   'https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2020/2020-02-11/hotels.csv';
@@ -36,7 +10,6 @@ const MONTHS: Record<string, number> = {
 };
 
 export interface SourceBooking {
-  /** Anonymised room type code from the source, e.g. "A". */
   roomCode: string;
   arrival: Date;
   departure: Date;
@@ -44,7 +17,6 @@ export interface SourceBooking {
   leadTimeDays: number;
   adults: number;
   children: number;
-  /** Average daily rate as recorded by the hotel, in euros. */
   adr: number;
   cancelled: boolean;
   status: 'Check-Out' | 'Canceled' | 'No-Show';
@@ -57,7 +29,6 @@ export interface SourceBooking {
   mealPlan: string;
 }
 
-/** Minimal RFC 4180 parser. The dataset quotes a few fields containing commas. */
 export function parseCsv(text: string): Record<string, string>[] {
   const rows: string[][] = [];
   let row: string[] = [];
@@ -99,11 +70,6 @@ const num = (value: string | undefined) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-/**
- * Turn one raw CSV record into a booking, or null when the row cannot support
- * a reservation: zero nights, a non-positive rate (complimentary and
- * "undefined" rows), or an unparseable arrival date.
- */
 export function normaliseRow(record: Record<string, string>): SourceBooking | null {
   const monthIndex = MONTHS[(record.arrival_date_month ?? '').toLowerCase()];
   if (monthIndex === undefined) return null;
@@ -153,10 +119,7 @@ export function normaliseRow(record: Record<string, string>): SourceBooking | nu
   };
 }
 
-export function loadDataset(
-  csv: string,
-  options: { hotel?: string } = {},
-): SourceBooking[] {
+export function loadDataset(csv: string, options: { hotel?: string } = {}): SourceBooking[] {
   const wanted = options.hotel;
   return parseCsv(csv)
     .filter((r) => !wanted || r.hotel === wanted)
@@ -165,11 +128,6 @@ export function loadDataset(
     .sort((a, b) => a.arrival.getTime() - b.arrival.getTime());
 }
 
-/**
- * Shift the whole stream forward as one rigid block so the newest arrival
- * lands `daysAhead` in the future. Every relative interval survives, which is
- * the point: seasonality, weekday shape, and lead times stay intact.
- */
 export function computeDateShift(
   bookings: SourceBooking[],
   today: Date,
@@ -191,19 +149,8 @@ export function shiftBooking(booking: SourceBooking, days: number): SourceBookin
   };
 }
 
-/**
- * Rank the source's anonymised room codes by their mean rate and distribute
- * them across this property's room types, cheapest to dearest.
- *
- * Demand is allocated in proportion to each tier's *inventory*, not evenly.
- * Splitting seven ways regardless of size sends a seventh of all demand at a
- * two-room penthouse while a ten-room category sits half empty, so most of the
- * dataset is refused for no good reason. Weighting by capacity is both the
- * realistic model and the one that wastes less of the source.
- */
 export interface RoomTier {
   id: string;
-  /** Number of sellable physical units in this tier. */
   capacity: number;
 }
 
@@ -228,7 +175,6 @@ export function mapRoomCodes(
   const totalVolume = ranked.reduce((acc, r) => acc + r.count, 0) || 1;
   const totalCapacity = tiers.reduce((acc, t) => acc + Math.max(0, t.capacity), 0) || tiers.length;
 
-  // Cumulative share of inventory at the top of each tier.
   const thresholds: number[] = [];
   let cumulative = 0;
   for (const tier of tiers) {
@@ -239,8 +185,6 @@ export function mapRoomCodes(
   const mapping: Record<string, string> = {};
   let running = 0;
   for (const entry of ranked) {
-    // Place each code by the midpoint of its volume block, so a code is not
-    // pushed into the next tier just because it happens to straddle a border.
     const midpoint = (running + entry.count / 2) / totalVolume;
     const index = thresholds.findIndex((t) => midpoint <= t);
     mapping[entry.code] = tiers[index === -1 ? tiers.length - 1 : index]!.id;
@@ -259,21 +203,6 @@ export interface ReplayResult<T> {
   turnedAway: number;
 }
 
-/**
- * Replay the arrival stream against real inventory.
- *
- * Because arrivals are processed in chronological order, a unit is free for a
- * request exactly when its last departure is on or before the new arrival,
- * which is the same half-open interval rule the live booking engine uses. A
- * request with no free unit is turned away rather than silently overbooked.
- *
- * Among the free units it takes the one vacated *most recently*, which is
- * best-fit rather than first-fit. First-fit keeps reaching for whichever unit
- * happens to sit earliest in the list, scattering short unsellable gaps across
- * the rest of the floor; best-fit closes the smallest gap it can and leaves the
- * longer-idle rooms open for longer stays. It is the same instinct a front
- * office manager has, and it is worth several points of occupancy.
- */
 export function replayAgainstInventory<
   T extends { arrival: Date; departure: Date; roomTypeId: string },
 >(bookings: T[], units: ReplayUnit[]): ReplayResult<T> {
@@ -296,8 +225,6 @@ export function replayAgainstInventory<
     let bestVacatedAt = -Infinity;
     for (const candidate of candidates) {
       const vacatedAt = lastDeparture.get(candidate.id) ?? -Infinity;
-      // Strict `>` so ties resolve to the first unit in code order, which
-      // keeps assignment deterministic across runs.
       if (vacatedAt <= arrival && (unit === undefined || vacatedAt > bestVacatedAt)) {
         unit = candidate;
         bestVacatedAt = vacatedAt;
@@ -316,14 +243,6 @@ export function replayAgainstInventory<
   return { accepted, turnedAway };
 }
 
-/**
- * Rescale the source's euro rates onto this property's published rate card.
- *
- * Using the raw figures directly would contradict the rates shown on the room
- * pages, so each tier is scaled by the ratio of its published base rate to the
- * mean rate the source recorded for that tier. Relative dispersion and
- * seasonality survive; the absolute level matches the catalogue.
- */
 export function buildRateScalers(
   bookings: { roomTypeId: string; adr: number }[],
   baseRateByRoomType: Record<string, number>,
@@ -345,7 +264,6 @@ export function buildRateScalers(
   return scalers;
 }
 
-/** Nightly rate in integer cents, after rescaling. */
 export function nightlyCents(adr: number, scaler: number): number {
   return Math.max(1000, Math.round(adr * scaler * 100));
 }

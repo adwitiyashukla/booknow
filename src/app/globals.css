@@ -1,9 +1,5 @@
 @import 'tailwindcss';
 
-/* ---------------------------------------------------------------------------
-   Design tokens. A single source of truth for colour, type, and elevation so
-   the whole product stays coherent without a component library.
---------------------------------------------------------------------------- */
 @theme {
   --color-ink-950: oklch(0.16 0.015 250);
   --color-ink-900: oklch(0.21 0.018 250);
@@ -52,7 +48,6 @@ body {
   color: var(--color-ink-950);
 }
 
-/* Visible focus for keyboard users, invisible for mouse users. */
 :focus-visible {
   outline: 2px solid var(--color-brand-400);
   outline-offset: 2px;

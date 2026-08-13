@@ -53,7 +53,7 @@ export default async function AccountPage() {
                     <div>
                       <p className="font-medium text-ink-50">{b.roomType.name}</p>
                       <p className="text-sm text-ink-400">
-                        {formatStayRange(b.checkIn, b.checkOut)} · {b.nights} nights · {b.reference}
+                        {formatStayRange(b.checkIn, b.checkOut)}, {b.nights} nights, {b.reference}
                       </p>
                     </div>
                     <div className="flex items-center gap-4">

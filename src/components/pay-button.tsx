@@ -24,8 +24,6 @@ export function PayButton({ reference, amountCents }: { reference: string; amoun
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? 'Could not start checkout.');
 
-      // Stripe returns an absolute URL; the simulated provider returns a
-      // relative one that stays inside the app.
       if (data.url.startsWith('http')) window.location.href = data.url;
       else router.push(data.url);
     } catch (e) {

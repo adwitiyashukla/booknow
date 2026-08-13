@@ -11,17 +11,6 @@ import { quoteStay, type PriceQuote, type RateRuleInput } from '@/lib/pricing';
 import { db } from './db';
 import { NotFoundError } from './errors';
 
-
-/**
- * The set of bookings that genuinely consume a room right now.
- *
- * A HELD booking blocks inventory, but only until its hold expires. Deriving
- * that at query time rather than waiting for the sweeper means an abandoned
- * checkout stops blocking the room the moment it lapses, so the cron job is
- * housekeeping (tidying the status column) rather than something correctness
- * depends on. That matters: schedulers are late, miss runs, and on some hosting
- * plans cannot run more than once a day.
- */
 export function blockingWhere(now = new Date()): Prisma.BookingWhereInput {
   return {
     OR: [
@@ -32,11 +21,6 @@ export function blockingWhere(now = new Date()): Prisma.BookingWhereInput {
   };
 }
 
-
-/**
- * Load every booking that could touch a stay window. The half-open overlap
- * predicate is pushed down to Postgres so we never pull the whole table.
- */
 export async function loadOverlappingBookings(
   checkIn: Date,
   checkOut: Date,
@@ -72,11 +56,6 @@ export interface AvailableRoomResult {
   reviewCount: number;
 }
 
-/**
- * The search read-model. One pass over the catalogue joins live inventory,
- * demand-aware pricing, and review aggregates so the UI can render a full
- * result card without any further round trips.
- */
 export async function searchAvailability(params: {
   checkIn?: string;
   checkOut?: string;
@@ -174,7 +153,6 @@ export async function searchAvailability(params: {
   });
 }
 
-/** 60-day forward availability strip for the room detail calendar. */
 export async function getRoomCalendar(roomTypeId: string, days = 60) {
   const roomType = await db.roomType.findUnique({
     where: { id: roomTypeId },
@@ -198,10 +176,6 @@ export async function getRoomCalendar(roomTypeId: string, days = 60) {
   };
 }
 
-/**
- * Assign a physical room. Runs inside the booking transaction so the read of
- * "which units are free" and the write that claims one are atomic.
- */
 export async function pickUnitForStay(
   tx: Prisma.TransactionClient,
   roomTypeId: string,

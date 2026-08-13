@@ -1,10 +1,3 @@
-/**
- * Deterministic seed.
- *
- * A fixed PRNG seed means every clone of this repo produces byte-identical
- * demo data: the dashboard screenshots in the README always match what a
- * reviewer sees locally, and the analytics tests have stable fixtures.
- */
 import { PrismaClient, type BookingStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
@@ -12,9 +5,6 @@ import { confirmationMessage, describeDatabaseTarget, requiresConfirmation } fro
 
 const db = new PrismaClient();
 
-// ---------------------------------------------------------------------------
-// Mulberry32: tiny, fast, seeded PRNG.
-// ---------------------------------------------------------------------------
 function mulberry32(seed: number) {
   return function random() {
     seed |= 0;
@@ -51,8 +41,6 @@ const AMENITIES = [
   { slug: 'breakfast', label: 'Breakfast included', icon: 'Croissant', category: 'dining' },
 ];
 
-// Photography: see docs/CREDITS.md. All images are Unsplash-licensed and served
-// from images.unsplash.com, the only remote host allowed by next.config.ts.
 const IMG = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1600&q=80`;
 
 const ROOM_TYPES = [
@@ -176,7 +164,6 @@ const REVIEW_BODIES = [
 ];
 
 async function main() {
-  // Announce the target before deleting anything. See src/lib/db-target.ts.
   const target = describeDatabaseTarget(process.env.DATABASE_URL);
   console.log(`Target database: ${target.label}${target.isLocal ? '' : '  [REMOTE]'}`);
   if (requiresConfirmation(target)) {
@@ -369,16 +356,6 @@ async function main() {
 
   console.log('Seeding booking history...');
 
-  // ---------------------------------------------------------------------
-  // Occupancy timeline.
-  //
-  // Random placement with collision rejection produces a sparse, clustered
-  // calendar that makes the dashboard look like a failing hotel. Instead we
-  // walk each physical room unit forward through time, alternating a stay
-  // with a gap. The ratio of the two means long-run occupancy is a tunable
-  // number rather than an accident: roughly 79% gross, landing near 70% net
-  // once cancellations are removed, which is what a healthy resort runs at.
-  // ---------------------------------------------------------------------
   const STAY_LENGTHS = [2, 2, 3, 3, 4, 5, 7];
   const GAP_LENGTHS = [0, 0, 0, 1, 1, 2, 3];
   const WINDOW_START = -95;
@@ -411,7 +388,6 @@ async function main() {
   const pending: SeedBooking[] = [];
   let reference = 100000;
 
-  /** Seasonal shape, mirroring the rate rules seeded above. */
   const seasonFactor = (offset: number) =>
     offset >= 60 ? 1.35 : offset >= 24 && offset <= 27 ? 1.45 : offset < -5 ? 0.8 : 1;
 
@@ -463,15 +439,12 @@ async function main() {
 
   for (const rt of roomTypeIds) {
     for (const unitId of rt.units) {
-      // Stagger each unit's first arrival so the calendar does not pulse.
       let cursor = WINDOW_START + between(0, 6);
 
       while (cursor < WINDOW_END) {
         const nights = pick(STAY_LENGTHS);
         const end = cursor + nights;
 
-        // A stay that has finished is checked out; one spanning today is in
-        // house; anything later is on the books.
         let status: BookingStatus;
         if (end <= 0) status = rand() < 0.1 ? (rand() < 0.6 ? 'CANCELLED' : 'NO_SHOW') : 'CHECKED_OUT';
         else if (cursor <= 0) status = 'CHECKED_IN';
@@ -483,9 +456,6 @@ async function main() {
     }
   }
 
-  // Abandoned checkouts. These never consumed a room in the end, so they can
-  // overlap freely, and they are what makes the conversion metric meaningful:
-  // without them every funnel reads a fictitious 100%.
   for (let i = 0; i < 46; i += 1) {
     const rt = pick(roomTypeIds);
     pending.push(
@@ -500,7 +470,6 @@ async function main() {
     );
   }
 
-  // A couple of live holds so the operations table has every state in it.
   for (let i = 0; i < 3; i += 1) {
     const rt = pick(roomTypeIds);
     pending.push({

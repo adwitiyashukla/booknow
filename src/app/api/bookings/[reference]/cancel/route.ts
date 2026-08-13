@@ -20,7 +20,6 @@ export async function POST(
       select: { userId: true, guestEmail: true },
     });
 
-    // A guest may cancel their own booking; staff may cancel any booking.
     const isStaff = session?.user?.role === 'ADMIN' || session?.user?.role === 'STAFF';
     const isOwner =
       !!session?.user &&

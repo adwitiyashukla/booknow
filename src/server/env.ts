@@ -1,9 +1,5 @@
 import { z } from 'zod';
 
-/**
- * Fail fast on misconfiguration. Optional integrations degrade gracefully
- * instead of throwing, which is what lets the project run with an empty .env.
- */
 const schema = z.object({
   DATABASE_URL: z.string().min(1).default('postgresql://booknow:booknow@localhost:5432/booknow'),
   AUTH_SECRET: z.string().min(1).default('dev-only-insecure-secret-change-me'),

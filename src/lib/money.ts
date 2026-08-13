@@ -1,10 +1,4 @@
-/**
- * Money is stored and computed exclusively in integer minor units (cents).
- * Floating point arithmetic on currency is a correctness bug waiting to
- * happen, so every rate, tax, and total in this codebase is an integer.
- */
-
-export const TAX_RATE = 0.12; // occupancy tax
+export const TAX_RATE = 0.12;
 export const RESORT_FEE_CENTS_PER_NIGHT = 3500;
 export const SERVICE_FEE_RATE = 0.05;
 
@@ -17,7 +11,6 @@ export function formatMoney(cents: number, currency = 'USD', locale = 'en-US'): 
   }).format(cents / 100);
 }
 
-/** Round-half-up on a cents value scaled by a rate, staying in integers. */
 export function applyRate(cents: number, rate: number): number {
   return Math.round(cents * rate);
 }

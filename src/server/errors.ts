@@ -1,4 +1,3 @@
-/** Domain errors carry an HTTP status so route handlers stay thin. */
 export class AppError extends Error {
   constructor(
     message: string,

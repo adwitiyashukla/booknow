@@ -2,7 +2,6 @@ import { requireRole } from '@/server/auth';
 import { db } from '@/server/db';
 import { toErrorResponse } from '@/server/errors';
 
-/** CSV export of the booking ledger for finance. */
 export async function GET() {
   try {
     await requireRole('ADMIN', 'STAFF');

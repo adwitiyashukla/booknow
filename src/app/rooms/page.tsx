@@ -44,7 +44,6 @@ async function Results({ raw }: { raw: RawParams }) {
       case 'size-desc': return b.roomType.sizeSqm - a.roomType.sizeSqm;
       case 'rating-desc': return b.rating - a.rating;
       default:
-        // Recommended: available first, then rating, then price.
         if ((b.unitsAvailable > 0 ? 1 : 0) !== (a.unitsAvailable > 0 ? 1 : 0)) {
           return (b.unitsAvailable > 0 ? 1 : 0) - (a.unitsAvailable > 0 ? 1 : 0);
         }
@@ -74,7 +73,7 @@ async function Results({ raw }: { raw: RawParams }) {
         ) : (
           <Badge tone="neutral">Add dates for live pricing</Badge>
         )}
-        <span>· {params.adults} adults{params.children ? `, ${params.children} children` : ''}</span>
+        <span>{params.adults} adults{params.children ? `, ${params.children} children` : ''}</span>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">

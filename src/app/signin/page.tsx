@@ -25,7 +25,6 @@ export default async function SignInPage({
         redirectTo: callbackUrl ?? '/account',
       });
     } catch (e) {
-      // next-auth signals a successful redirect by throwing; rethrow it.
       if ((e as Error).message?.includes('NEXT_REDIRECT')) throw e;
       redirect('/signin?error=CredentialsSignin');
     }
@@ -58,9 +57,9 @@ export default async function SignInPage({
       <Card className="mt-5 p-5 text-sm">
         <p className="mb-2 font-medium text-ink-100">Demo accounts</p>
         <ul className="space-y-1 text-ink-400">
-          <li><code className="text-brand-300">admin@booknow.dev</code> / Password123 · full dashboard</li>
-          <li><code className="text-brand-300">staff@booknow.dev</code> / Password123 · front desk</li>
-          <li><code className="text-brand-300">guest@booknow.dev</code> / Password123 · guest view</li>
+          <li><code className="text-brand-300">admin@booknow.dev</code> / Password123, full dashboard</li>
+          <li><code className="text-brand-300">staff@booknow.dev</code> / Password123, front desk</li>
+          <li><code className="text-brand-300">guest@booknow.dev</code> / Password123, guest view</li>
         </ul>
       </Card>
     </div>

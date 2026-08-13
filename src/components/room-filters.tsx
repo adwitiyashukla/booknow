@@ -67,8 +67,6 @@ export function RoomFilters() {
           onChange={(e) =>
             update((next) => {
               const band = PRICE_BANDS[Number(e.target.value)]!;
-              // An empty bound means "no limit", so the param is removed
-              // rather than set to an empty string.
               if (band.min) next.set('minPrice', band.min);
               else next.delete('minPrice');
               if (band.max) next.set('maxPrice', band.max);

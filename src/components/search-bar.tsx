@@ -25,7 +25,6 @@ export function SearchBar({ compact = false }: { compact?: boolean }) {
     router.push(`/rooms?${query.toString()}`);
   }
 
-  // Check-out can never precede check-in: the input enforces it natively.
   const minCheckOut = toDateKey(addDays(checkIn, 1));
 
   return (

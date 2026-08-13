@@ -9,7 +9,6 @@ export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Deterministic booking reference, e.g. BN-7K2QF9. */
 export function bookingReference(seed = Date.now()): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let n = Math.abs(seed ^ Math.floor(Math.random() * 0xffffff));

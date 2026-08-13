@@ -1,11 +1,3 @@
-/**
- * Availability algebra.
- *
- * Pure, database-free functions describing what "available" means. The server
- * layer feeds these with rows from Postgres; the unit tests feed them with
- * fixtures. Keeping them separate is what makes concurrency bugs testable.
- */
-
 import { eachNight, rangesOverlap, toDateKey } from './dates';
 
 export interface StayInterval {
@@ -16,24 +8,15 @@ export interface StayInterval {
 export interface BookedInterval extends StayInterval {
   roomUnitId?: string | null;
   status?: string;
-  /** When a HELD booking lapses. Null or absent means it does not expire. */
   holdExpiresAt?: Date | string | null;
 }
 
-/** Statuses that consume inventory. HELD counts: that is the point of a hold. */
 export const BLOCKING_STATUSES = ['HELD', 'CONFIRMED', 'CHECKED_IN'] as const;
 
 export function isBlocking(status: string | undefined): boolean {
   return !!status && (BLOCKING_STATUSES as readonly string[]).includes(status);
 }
 
-/**
- * Whether a booking consumes a room at a given moment.
- *
- * A hold reserves inventory, but only until it lapses. Treating a lapsed hold
- * as still blocking would leak rooms for as long as it took a scheduled job to
- * notice, so expiry is evaluated here instead of being trusted to a cron.
- */
 export function consumesInventory(booking: BookedInterval, now: Date = new Date()): boolean {
   if (!isBlocking(booking.status)) return false;
   if (booking.status !== 'HELD') return true;
@@ -41,7 +24,6 @@ export function consumesInventory(booking: BookedInterval, now: Date = new Date(
   return new Date(booking.holdExpiresAt).getTime() > now.getTime();
 }
 
-/** How many of a room type are consumed on each night of a candidate stay. */
 export function occupiedCountByNight(
   request: StayInterval,
   booked: BookedInterval[],
@@ -61,10 +43,6 @@ export function occupiedCountByNight(
   return counts;
 }
 
-/**
- * Remaining inventory for a room type across a requested stay. The binding
- * constraint is the single worst night, not the average.
- */
 export function remainingInventory(
   request: StayInterval,
   totalUnits: number,
@@ -95,10 +73,6 @@ export function isRoomTypeAvailable(
   return remainingInventory(request, totalUnits, booked).available >= quantity;
 }
 
-/**
- * Pick a physical room unit that is free for the whole stay. Returns null when
- * every unit collides, which the transaction treats as a lost race.
- */
 export function selectFreeUnit(
   request: StayInterval,
   unitIds: string[],
@@ -117,7 +91,6 @@ export function selectFreeUnit(
   return unitIds.find((id) => !busy.has(id)) ?? null;
 }
 
-/** Calendar payload for the room detail page: which nights can be sold. */
 export function buildAvailabilityCalendar(
   from: Date | string,
   to: Date | string,
@@ -132,7 +105,6 @@ export function buildAvailabilityCalendar(
   }));
 }
 
-/** Portfolio-level occupancy for the admin dashboard. */
 export function portfolioOccupancy(
   range: StayInterval,
   totalUnits: number,

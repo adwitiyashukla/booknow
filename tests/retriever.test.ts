@@ -164,7 +164,6 @@ describe('rankRooms', () => {
   });
 
   it('does not let a strong feature match smuggle in an over-budget room', () => {
-    // The family suite is the only "family" match but costs 41,000.
     const ranked = rankRooms(rooms, {
       freeText: 'space for the family',
       mustHave: [],

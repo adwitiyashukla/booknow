@@ -29,7 +29,7 @@ export default async function CheckoutPage({
           This booking is already paid.
         </h1>
         <Link href={`/bookings/${booking.reference}`} className="mt-4 inline-block text-brand-300 hover:underline">
-          View your confirmation →
+          View your confirmation
         </Link>
       </div>
     );
@@ -46,8 +46,8 @@ export default async function CheckoutPage({
             <p className="text-xs uppercase tracking-wider text-ink-500">Reservation</p>
             <p className="text-lg font-semibold text-ink-50">{booking.roomType.name}</p>
             <p className="text-sm text-ink-400">
-              {formatStayRange(booking.checkIn, booking.checkOut)} · {booking.nights} night
-              {booking.nights > 1 ? 's' : ''} · {booking.adults} adults
+              {formatStayRange(booking.checkIn, booking.checkOut)}, {booking.nights} night
+              {booking.nights > 1 ? 's' : ''}, {booking.adults} adults
               {booking.children ? `, ${booking.children} children` : ''}
             </p>
             {booking.roomUnit ? (
@@ -96,7 +96,7 @@ export default async function CheckoutPage({
       </Card>
 
       <p className="mt-6 text-center text-xs text-ink-500">
-        Reference {booking.reference} · {booking.ratePlan?.name ?? 'Standard rate'}
+        Reference {booking.reference}, {booking.ratePlan?.name ?? 'Standard rate'}
         {booking.ratePlan && !booking.ratePlan.refundable ? ' (non-refundable)' : ''}
       </p>
     </div>

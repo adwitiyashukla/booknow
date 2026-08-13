@@ -1,17 +1,3 @@
-/**
- * Offline natural-language understanding for the concierge.
- *
- * The concierge has two tiers:
- *   1. This deterministic rule-based parser, which always runs. It costs
- *      nothing, is instant, and makes the demo work with zero API keys.
- *   2. An optional LLM planner (see src/server/ai.ts) that supersedes tier 1
- *      when ANTHROPIC_API_KEY is present.
- *
- * Tier 1 is also the evaluation baseline: every LLM output is validated
- * against the same StructuredQuery schema, so the rest of the system never
- * has to care which tier produced the plan.
- */
-
 import { addDays, toDateKey } from './dates';
 
 export interface StructuredQuery {
@@ -40,7 +26,6 @@ const NUMBER_WORDS: Record<string, number> = {
   a: 1, an: 1, couple: 2, solo: 1,
 };
 
-/** Feature vocabulary with synonyms, so "sea view" and "ocean view" unify. */
 export const FEATURE_LEXICON: Record<string, string[]> = {
   ocean_view: ['ocean view', 'sea view', 'seaview', 'oceanview', 'sea facing', 'ocean facing', 'water view', 'beachfront'],
   balcony: ['balcony', 'terrace', 'patio', 'veranda', 'private deck'],
@@ -105,7 +90,6 @@ function detectDates(text: string, today: Date): { checkIn?: string; checkOut?: 
     ? (wordNights[nightsMatch[1]] ?? (parseInt(nightsMatch[1], 10) || 3))
     : undefined;
 
-  // Explicit ISO dates win.
   const isoDates = text.match(/\d{4}-\d{2}-\d{2}/g);
   if (isoDates && isoDates.length >= 2 && isoDates[0] && isoDates[1]) {
     return { checkIn: isoDates[0], checkOut: isoDates[1] };
@@ -114,7 +98,6 @@ function detectDates(text: string, today: Date): { checkIn?: string; checkOut?: 
     return { checkIn: isoDates[0], checkOut: toDateKey(addDays(isoDates[0], nights ?? 3)) };
   }
 
-  // Relative language.
   let start: Date | undefined;
   if (/\btonight\b|\btoday\b/.test(text)) start = today;
   else if (/\btomorrow\b/.test(text)) start = addDays(today, 1);
@@ -127,7 +110,6 @@ function detectDates(text: string, today: Date): { checkIn?: string; checkOut?: 
   } else if (/\bnext week\b/.test(text)) start = addDays(today, 7);
   else if (/\bnext month\b/.test(text)) start = addDays(today, 30);
 
-  // Month names, optionally with a day.
   if (!start) {
     for (const [name, index] of Object.entries(MONTHS)) {
       const re = new RegExp(`\\b${name}\\b(?:\\s+(\\d{1,2}))?`);
@@ -165,11 +147,11 @@ export function parseQuery(input: string, today: Date = new Date()): StructuredQ
   const dates = detectDates(text, today);
   const intent = detectIntent(text);
 
-  // "must have" is anything stated with a hard requirement verb; everything
-  // else becomes a soft preference used only for ranking.
   const hardMarkers = /\b(must|need|require|has to|essential|only|non-negotiable)\b/;
   const isHard = hardMarkers.test(text);
-  const mustHave = isHard ? features : features.filter((f) => ['accessible', 'ocean_view', 'balcony'].includes(f));
+  const mustHave = isHard
+    ? features
+    : features.filter((f) => ['accessible', 'ocean_view', 'balcony'].includes(f));
   const niceToHave = features.filter((f) => !mustHave.includes(f));
 
   const signals = [
@@ -193,10 +175,11 @@ export function parseQuery(input: string, today: Date = new Date()): StructuredQ
   };
 }
 
-/** Human-readable summary of what the concierge understood. */
 export function explainQuery(q: StructuredQuery): string {
   const parts: string[] = [];
-  parts.push(`${q.adults} adult${q.adults > 1 ? 's' : ''}${q.children ? ` and ${q.children} child${q.children > 1 ? 'ren' : ''}` : ''}`);
+  parts.push(
+    `${q.adults} adult${q.adults > 1 ? 's' : ''}${q.children ? ` and ${q.children} child${q.children > 1 ? 'ren' : ''}` : ''}`,
+  );
   if (q.checkIn && q.checkOut) parts.push(`${q.checkIn} to ${q.checkOut}`);
   if (q.maxNightlyCents) parts.push(`under $${Math.round(q.maxNightlyCents / 100)} per night`);
   const feats = [...q.mustHave, ...q.niceToHave].map((f) => f.replace(/_/g, ' '));

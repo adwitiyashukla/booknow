@@ -1,15 +1,3 @@
-/**
- * Semantic room retrieval.
- *
- * A hosted vector database would be overkill for a catalogue of this size, so
- * the retriever builds a TF-IDF index in memory and ranks by cosine
- * similarity. It runs in single-digit milliseconds, needs no API key, and is
- * fully deterministic - which means the ranking can be unit tested.
- *
- * The `embed`/`cosine` pair is intentionally the same interface a real vector
- * store exposes, so swapping in pgvector later is a one-file change.
- */
-
 const STOPWORDS = new Set([
   'a','an','the','and','or','but','for','with','without','in','on','at','to','of','is','are','be',
   'i','we','my','our','me','us','you','your','it','that','this','was','were','from','by','as','if',
@@ -26,7 +14,6 @@ export function tokenize(text: string): string[] {
     .map(stem);
 }
 
-/** Tiny Porter-flavoured stemmer: enough to unify plurals and gerunds. */
 export function stem(word: string): string {
   if (word.length <= 4) return word;
   for (const suffix of ['ing', 'ies', 'ied', 'ies', 'es', 's', 'ed', 'ly']) {
@@ -79,13 +66,13 @@ export class TfIdfIndex {
     for (const t of tokens) tf.set(t, (tf.get(t) ?? 0) + 1);
     const vector = new Map<string, number>();
     for (const [term, count] of tf) {
-      const weight = (count / tokens.length) * (this.idf.get(term) ?? Math.log(this.corpusSize + 1) + 1);
+      const weight =
+        (count / tokens.length) * (this.idf.get(term) ?? Math.log(this.corpusSize + 1) + 1);
       vector.set(term, weight);
     }
     return vector;
   }
 
-  /** Same shape as a hosted embedding call, minus the network round trip. */
   embed(text: string): Map<string, number> {
     return this.vectorise(tokenize(text));
   }
@@ -115,7 +102,6 @@ export function cosine(
   bNorm: number,
 ): number {
   if (aNorm === 0 || bNorm === 0) return 0;
-  // Iterate the smaller vector for the dot product.
   const [small, large] = a.size <= b.size ? [a, b] : [b, a];
   let dot = 0;
   for (const [term, weight] of small) {
@@ -172,16 +158,6 @@ export function satisfiesFeature(feature: string, room: RankableRoom): boolean {
   return new RegExp(feature.replace(/_/g, '[ -]?'), 'i').test(room.searchCorpus);
 }
 
-/**
- * Hybrid ranking: semantic similarity blended with explicit feature matching,
- * plus a small quality prior.
- *
- * A stated budget is a constraint, not a preference. Scoring it as one more
- * weighted signal lets a strong feature match outvote it, which is how you end
- * up recommending a $680 villa to someone who asked for something under $300.
- * So price bounds filter alongside the hard requirements, and the caller
- * decides what to do when that leaves nothing.
- */
 export function rankRooms(
   rooms: RankableRoom[],
   query: {
@@ -194,7 +170,10 @@ export function rankRooms(
   limit = 8,
 ): RankedRoom[] {
   const index = new TfIdfIndex(
-    rooms.map((r) => ({ id: r.id, text: `${r.name} ${r.searchCorpus} ${(r.amenitySlugs ?? []).join(' ')}` })),
+    rooms.map((r) => ({
+      id: r.id,
+      text: `${r.name} ${r.searchCorpus} ${(r.amenitySlugs ?? []).join(' ')}`,
+    })),
   );
   const semantic = new Map(index.search(query.freeText, rooms.length).map((r) => [r.id, r.score]));
   const topSemantic = Math.max(0.0001, ...semantic.values());
@@ -218,7 +197,6 @@ export function rankRooms(
           reasons.push(`Good for ${f.replace(/_/g, ' ')}`);
         }
       }
-      // Phrased as something a person would say, since it is shown to guests.
       for (const f of query.mustHave) {
         reasons.push(`Has the ${f.replace(/_/g, ' ')} you asked for`);
       }
@@ -226,10 +204,8 @@ export function rankRooms(
       const featureScore = soft.length ? matched / soft.length : 0;
       if (query.maxNightlyCents) reasons.push('Within your nightly budget');
 
-      const qualityPrior = Math.min(1, Math.max(0, (room.rating ?? 4.5) - 4)); // 0..1 over 4.0-5.0
+      const qualityPrior = Math.min(1, Math.max(0, (room.rating ?? 4.5) - 4));
 
-      // Budget no longer scores, because everything reaching here already
-      // satisfies it. Its weight is redistributed to the remaining signals.
       const score = 0.5 * semanticScore + 0.35 * featureScore + 0.15 * qualityPrior;
 
       return { id: room.id, score, semanticScore, featureScore, reasons };

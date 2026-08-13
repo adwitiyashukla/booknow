@@ -70,19 +70,6 @@ export async function quoteForRoom(input: {
   return { quote, unitsAvailable: available, roomTypeName: roomType.name };
 }
 
-/**
- * Create a HELD booking.
- *
- * Correctness notes
- *  - Runs at Serializable isolation. Two guests racing for the last unit will
- *    make one transaction fail with a 40001 serialization error rather than
- *    both succeeding, and we surface that as a clean 409.
- *  - Availability is re-checked *inside* the transaction. Checking before the
- *    transaction would be a time-of-check-to-time-of-use bug.
- *  - The price is recomputed server side. The client quote is advisory only,
- *    so a tampered payload cannot buy a suite for a dollar.
- *  - The hold expires, so abandoned checkouts return inventory automatically.
- */
 export async function createBookingHold(
   input: CreateBookingInput & { userId?: string },
 ): Promise<{ reference: string; id: string; quote: PriceQuote; holdExpiresAt: Date }> {
@@ -112,7 +99,6 @@ export async function createBookingHold(
           throw new AppError('That party size does not fit this room type.');
         }
 
-        // Re-read inventory inside the transaction (TOCTOU guard).
         const blocking = await tx.booking.findMany({
           where: {
             roomTypeId: roomType.id,
@@ -138,7 +124,6 @@ export async function createBookingHold(
           ? roomType.ratePlans.find((p) => p.id === input.ratePlanId)
           : roomType.ratePlans[0];
 
-        // Authoritative price: never trust the client's number.
         const quote = quoteStay({
           baseRateCents: roomType.baseRateCents,
           checkIn,
@@ -196,8 +181,6 @@ export async function createBookingHold(
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 15_000 },
     );
   } catch (error) {
-    // Postgres raises 40001 when it cannot serialize concurrent writes. That
-    // is the database telling us two guests raced, so it is a 409, not a 500.
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       (error.code === 'P2034' || error.code === 'P2002')
@@ -278,10 +261,6 @@ export async function cancelBooking(reference: string, reason?: string, actor = 
   return { booking, refund };
 }
 
-/**
- * Sweep abandoned holds. Invoked by a cron route so inventory is never leaked
- * by a guest who closed the tab mid-checkout.
- */
 export async function expireStaleHolds(now = new Date()): Promise<number> {
   const stale = await db.booking.findMany({
     where: { status: 'HELD', holdExpiresAt: { lt: now } },

@@ -54,7 +54,6 @@ export default async function RoomPage({
 
   const calendar = await getRoomCalendar(room.id, 45);
   const ratings = room.reviews.map((r) => r.rating);
-  // Null rather than a flattering default: a room with no reviews should say so.
   const avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
 
   const str = (key: string) => (typeof query[key] === 'string' ? (query[key] as string) : undefined);
@@ -111,16 +110,16 @@ export default async function RoomPage({
           <section>
             <ul className="grid grid-cols-2 gap-4 border-y hairline py-5 sm:grid-cols-4">
               <li className="flex items-center gap-2.5 text-sm text-ink-200">
-                <Maximize className="size-4 text-brand-400" /> {room.sizeSqm} m²
+                <Maximize className="size-4 text-brand-400" /> {room.sizeSqm} sqm
               </li>
               <li className="flex items-center gap-2.5 text-sm text-ink-200">
-                <BedDouble className="size-4 text-brand-400" /> {room.bedCount} × {room.bedType.toLowerCase()}
+                <BedDouble className="size-4 text-brand-400" /> {room.bedCount} x {room.bedType.toLowerCase()}
               </li>
               <li className="flex items-center gap-2.5 text-sm text-ink-200">
                 <Users className="size-4 text-brand-400" /> {room.maxAdults} adults, {room.maxChildren} children
               </li>
               <li className="flex items-center gap-2.5 text-sm text-ink-200">
-                <Building className="size-4 text-brand-400" /> Floors {room.floorMin}–{room.floorMax}
+                <Building className="size-4 text-brand-400" /> Floors {room.floorMin}-{room.floorMax}
               </li>
             </ul>
           </section>
@@ -166,7 +165,7 @@ export default async function RoomPage({
                     {plan.refundable
                       ? `Free cancellation up to ${plan.cancellationHours}h before`
                       : 'Non-refundable'}
-                    {plan.minNights > 1 ? ` · min ${plan.minNights} nights` : ''}
+                    {plan.minNights > 1 ? `, min ${plan.minNights} nights` : ''}
                   </p>
                 </Card>
               ))}
@@ -187,7 +186,7 @@ export default async function RoomPage({
                     <p className="font-medium text-ink-100">{review.title}</p>
                     <p className="mt-1.5 text-sm leading-relaxed text-ink-400">{review.body}</p>
                     <p className="mt-3 text-xs text-ink-500">
-                      {review.user.name} · {review.createdAt.toISOString().slice(0, 10)}
+                      {review.user.name}, {review.createdAt.toISOString().slice(0, 10)}
                     </p>
                   </Card>
                 ))}

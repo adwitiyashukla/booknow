@@ -9,7 +9,6 @@ import { formatMoney } from '@/lib/money';
 
 export const dynamic = 'force-dynamic';
 
-/** Ranked breakdown with an inline share bar, used by the acquisition panels. */
 function ShareList({ rows }: { rows: { label: string; value: number }[] }) {
   if (!rows.length) {
     return (

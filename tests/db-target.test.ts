@@ -64,7 +64,6 @@ describe('requiresConfirmation', () => {
   });
 
   it('reproduces the incident: a remote url left exported in the shell is stopped', () => {
-    // Exactly the shape of the mistake this guard exists to prevent.
     const shell = { DATABASE_URL: REMOTE };
     expect(requiresConfirmation(describeDatabaseTarget(shell.DATABASE_URL), shell)).toBe(true);
   });

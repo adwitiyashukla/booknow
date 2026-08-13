@@ -1,16 +1,6 @@
 import { addDays, eachNight, toDateKey, toUtcDate } from '@/lib/dates';
 import { db } from './db';
 
-/**
- * Revenue management metrics.
- *
- * ADR    = room revenue / rooms sold
- * RevPAR = room revenue / rooms available   (the metric hotels actually run on)
- * ALOS   = average length of stay
- * These are computed from the booking ledger rather than stored, so they can
- * never drift out of sync with the source of truth.
- */
-
 export interface DashboardMetrics {
   rangeLabel: string;
   totalRevenueCents: number;
@@ -24,13 +14,11 @@ export interface DashboardMetrics {
   averageLeadTimeDays: number;
   averageLengthOfStay: number;
   cancellationRate: number;
-  /** Share of reservations made that actually materialised into a stay. */
   realisationRate: number;
   revenueByDay: { date: string; revenueCents: number; bookings: number }[];
   occupancyByDay: { date: string; occupancy: number; roomsSold: number }[];
   revenueByRoomType: { name: string; revenueCents: number; nights: number }[];
   statusMix: { status: string; count: number }[];
-  /** Real acquisition mix when the ledger came from the source dataset. */
   topSources: { label: string; value: number }[];
   topCountries: { label: string; value: number }[];
   channelMix: { label: string; value: number }[];
@@ -55,7 +43,6 @@ export async function getDashboardMetrics(days = 30): Promise<DashboardMetrics> 
       where: { createdAt: { gte: from } },
       select: { status: true, createdAt: true, checkIn: true, nights: true, totalCents: true },
     }),
-    // Acquisition mix is read straight off the ledger rather than estimated.
     db.booking.groupBy({
       by: ['marketSegment'],
       _count: { _all: true },
@@ -139,8 +126,6 @@ export async function getDashboardMetrics(days = 30): Promise<DashboardMetrics> 
       ? Number((bookings.reduce((a, b) => a + b.nights, 0) / bookings.length).toFixed(1))
       : 0,
     cancellationRate: allInWindow.length ? cancelled / allInWindow.length : 0,
-    // Cancellations and abandoned holds both count against realisation, which
-    // is the number a commercial team actually reports.
     realisationRate: allInWindow.length
       ? confirmedInWindow / Math.max(1, confirmedInWindow + cancelled + expired)
       : 0,
@@ -167,7 +152,6 @@ export async function getDashboardMetrics(days = 30): Promise<DashboardMetrics> 
   };
 }
 
-/** Forward-looking pickup: what is already on the books for the next N days. */
 export async function getForwardPickup(days = 45) {
   const today = toUtcDate(new Date());
   const to = addDays(today, days);

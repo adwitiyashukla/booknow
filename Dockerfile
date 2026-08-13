@@ -1,11 +1,5 @@
 # syntax=docker/dockerfile:1
 
-# ---------------------------------------------------------------------------
-# Multi-stage build. The runtime image ships only the Next.js standalone
-# output plus the Prisma engine, so it stays around 200 MB instead of the
-# ~1.2 GB a naive single-stage build produces.
-# ---------------------------------------------------------------------------
-
 FROM node:22-alpine AS deps
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
@@ -18,8 +12,6 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-# Opt into the self-contained server bundle. Only the image build wants this;
-# a local `next start` cannot serve a standalone build.
 ENV BUILD_STANDALONE=true
 RUN npx prisma generate && npm run build
 
@@ -31,7 +23,6 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 
-# Never run the app as root.
 RUN addgroup --system --gid 1001 nodejs \
  && adduser --system --uid 1001 nextjs
 

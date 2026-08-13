@@ -4,12 +4,6 @@ import { LogOut, Waves } from 'lucide-react';
 import { auth, signOut } from '@/server/auth';
 import { Button, ButtonLink } from '@/components/ui';
 
-/**
- * Sessions are JWTs, so they carry a snapshot of the user taken at sign-in.
- * Signing out and back in is what picks up a changed name or role, which makes
- * this control functional rather than decorative. It posts to a server action
- * so the cookie is cleared server side and it still works without JavaScript.
- */
 function SignOutButton() {
   return (
     <form

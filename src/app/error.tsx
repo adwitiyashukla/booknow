@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 
 export default function GlobalError({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
-    // In production this is where an observability client would report.
     console.error(error);
   }, [error]);
 

@@ -52,7 +52,7 @@ export default async function AdminRooms() {
                 <tr key={rt.id} className="border-b hairline last:border-0 hover:bg-ink-800/40">
                   <td className="px-4 py-3">
                     <p className="text-ink-100">{rt.name}</p>
-                    <p className="text-xs text-ink-500">{rt.sizeSqm} m² · sleeps {rt.maxAdults + rt.maxChildren}</p>
+                    <p className="text-xs text-ink-500">{rt.sizeSqm} sqm, sleeps {rt.maxAdults + rt.maxChildren}</p>
                   </td>
                   <td className="px-4 py-3 text-right text-ink-200">{formatMoney(rt.baseRateCents)}</td>
                   <td className="px-4 py-3 text-right text-ink-300">
@@ -65,7 +65,7 @@ export default async function AdminRooms() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right text-ink-300">{rt._count.bookings}</td>
-                  <td className="px-4 py-3 text-right text-ink-300">{avg ? avg.toFixed(2) : '—'}</td>
+                  <td className="px-4 py-3 text-right text-ink-300">{avg ? avg.toFixed(2) : '-'}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1.5">
                       {rt.hasOceanView ? <Badge tone="brand">Ocean</Badge> : null}

@@ -4,18 +4,6 @@ import { formatMoney } from '@/lib/money';
 import { db } from './db';
 import { env, features } from './env';
 
-/**
- * The concierge is a two-tier planner.
- *
- * Tier 1 (always available): the deterministic NLU parser in src/lib/nlu.ts.
- * Tier 2 (when ANTHROPIC_API_KEY is set): an LLM that produces the same
- * StructuredQuery JSON, validated against the identical schema before use.
- *
- * Retrieval and answer generation are shared. That separation - plan, then
- * retrieve, then ground the answer in retrieved rows - is what keeps the
- * assistant from inventing rooms or prices that do not exist.
- */
-
 const PLANNER_SYSTEM_PROMPT = `You are the booking planner for a resort reservation system.
 Convert the guest's message into JSON matching exactly this shape:
 {"checkIn":"YYYY-MM-DD"|null,"checkOut":"YYYY-MM-DD"|null,"adults":number,"children":number,
@@ -65,7 +53,6 @@ async function planWithLlm(message: string, today: Date): Promise<StructuredQuer
       confidence: 0.95,
     };
   } catch {
-    // Any LLM failure silently falls back to tier 1 rather than 500ing.
     return null;
   }
 }
@@ -154,9 +141,6 @@ export async function askConcierge(message: string, today = new Date()): Promise
 
   const pool = fitsParty.length ? fitsParty : rankable;
 
-  // Budget is a hard filter now, so it can legitimately return nothing. When
-  // that happens we say so and show the closest alternatives rather than
-  // silently pretending a $680 villa answers a $300 question.
   let ranked: RankedRoom[] = rankRooms(pool, plan, 3);
   let budgetRelaxed = false;
   if (!ranked.length && (plan.maxNightlyCents || plan.minNightlyCents)) {
@@ -200,11 +184,6 @@ export async function askConcierge(message: string, today = new Date()): Promise
   return { answer, plan, understood, tier, suggestions, searchUrl: `/rooms?${params.toString()}` };
 }
 
-/**
- * The answer is templated from retrieved rows rather than generated freely.
- * Grounding it this way means the concierge cannot hallucinate a room name or
- * a price that is not in the database.
- */
 function buildGroundedAnswer(
   plan: StructuredQuery,
   suggestions: ConciergeSuggestion[],

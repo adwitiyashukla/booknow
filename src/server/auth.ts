@@ -24,8 +24,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await db.user.findUnique({ where: { email: parsed.data.email } });
         if (!user?.passwordHash) {
-          // Do comparable work even when the account does not exist so that
-          // response timing does not leak which emails are registered.
           await bcrypt.compare(
             parsed.data.password,
             '$2a$12$C6UzMDM.H6dfI/f/IKcEeO1a3xIpZ3qFcQpQpQpQpQpQpQpQpQpQu',

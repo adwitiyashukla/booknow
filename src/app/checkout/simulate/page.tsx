@@ -8,12 +8,6 @@ import { formatMoney } from '@/lib/money';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * Stand-in for Stripe Checkout when no API key is configured.
- *
- * It deliberately calls the exact same settlePayment() path the real webhook
- * uses, so the demo exercises the production code rather than a shortcut.
- */
 export default async function SimulatedCheckout({
   searchParams,
 }: {

@@ -2,7 +2,7 @@
   "name": "booknow",
   "version": "1.0.0",
   "private": true,
-  "description": "BookNow - a resort reservation platform with a real availability engine, dynamic pricing, Stripe payments, an AI concierge, and a revenue-management dashboard.",
+  "description": "Resort reservation platform with room-level availability, demand-based pricing and a revenue dashboard.",
   "engines": {
     "node": ">=20.0.0"
   },

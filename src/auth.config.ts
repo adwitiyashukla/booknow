@@ -1,14 +1,5 @@
 import type { NextAuthConfig } from 'next-auth';
 
-/**
- * Edge-safe half of the auth configuration.
- *
- * Next.js middleware runs on the edge runtime, which cannot load the Prisma
- * client. Splitting the config means middleware can still make authorization
- * decisions from the JWT without dragging a database driver into the edge
- * bundle. The Node-only half (adapter, credential verification) lives in
- * src/server/auth.ts.
- */
 export const authConfig = {
   pages: { signIn: '/signin', error: '/signin' },
   session: { strategy: 'jwt', maxAge: 60 * 60 * 24 * 30 },
